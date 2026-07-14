@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "functional_status": "PASS",
+  "refinement_status": "PASS",
+  "phase_mode": "refinement",
+  "initial_target_change_fingerprint": "5f62d9cdb18fde31b6f6fbd801c7d24256ffdc2285fa2600eadd9723fe5b7659",
+  "final_target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716",
+  "phase_06_repair": {
+    "status": "PASS",
+    "selected_violation_disposition": "ALL_FIXED",
+    "batch_failure_reason": null,
+    "revalidation_required": false,
+    "validation_report_sha256": "91e46c47c42419e98c7749f2b1579828acb119755ebef1b3bf994f2dc24bf2ea",
+    "selected_violation_ids": [
+      "VAL-DISABLED-ERROR-001",
+      "VAL-TEST-UNSELECTED-OUTBOUND-001",
+      "VAL-TEST-DISABLED-INBOUND-001",
+      "VAL-MANIFEST-COVERAGE-001"
+    ],
+    "explicitly_unselected_violation_ids": [],
+    "initial_target_change_fingerprint": "dca7804f3fc55036194091d3446855c0afb6532fa78781349ca8549e13ef99f1",
+    "final_target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716",
+    "environment_preparation": [
+      "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy",
+      "export GOTOOLCHAIN=go1.23.5",
+      "export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\""
+    ],
+    "toolchain_probes": [
+      {
+        "command": "go version; go env GOVERSION GOOS GOARCH CGO_ENABLED GOFLAGS GOTOOLCHAIN; golangci-lint version; golangci-lint linters --config .golangci.yml >/dev/null",
+        "exit_code": 0,
+        "result": "PASS: Go 1.23.5 linux/amd64, CGO enabled, empty GOFLAGS, golangci-lint 1.60.3"
+      }
+    ],
+    "verification": [
+      {
+        "command": "go test ./p2p -list '^TestControllerMediation'",
+        "exit_code": 0,
+        "result": "PASS: 9 matching symbols"
+      },
+      {
+        "command": "go test ./p2p -run '^TestControllerMediation' -count=1",
+        "exit_code": 0,
+        "result": "PASS"
+      },
+      {
+        "command": "go test -race ./p2p -run '^TestControllerMediation' -count=20",
+        "exit_code": 0,
+        "result": "PASS: no race report in 20 repetitions"
+      },
+      {
+        "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1",
+        "exit_code": 0,
+        "result": "PASS"
+      },
+      {
+        "command": "git diff --check -- p2p/peer.go p2p/controller_mediation_test.go",
+        "exit_code": 0,
+        "result": "PASS"
+      },
+      {
+        "command": "go vet ./p2p",
+        "exit_code": 0,
+        "result": "PASS"
+      },
+      {
+        "command": "golangci-lint run ./p2p/...",
+        "exit_code": 0,
+        "result": "PASS: no findings; only configured exportloopref deprecation warning"
+      }
+    ]
+  },
+  "validated_baseline_evidence": {
+    "path": "artifacts/baseline-report.json",
+    "known_failure_id": "BASE-CONSENSUS-001",
+    "test": "TestStateFullRound1",
+    "exit_code": 1,
+    "result": "KNOWN_BASELINE_FAILURE",
+    "rerun": false
+  },
+  "target": {
+    "name": "cometbft",
+    "revision": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1",
+    "source_evidence": ["artifacts/01-binding.json target", "artifacts/02-patch-plan.json source_revision", "git rev-parse HEAD"]
+  },
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "selected_messages": [
+    {"group": "consensus-state", "channel_id": 32, "types": ["NewRoundStep", "NewValidBlock", "HasVote", "HasProposalBlockPart", "VoteSetMaj23"], "owner": "internal/consensus.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[0]", "cometbft/internal/consensus/reactor.go:27", "cometbft/node/controller_mediation.go:700"]},
+    {"group": "consensus-data", "channel_id": 33, "types": ["Proposal", "ProposalPOL", "BlockPart"], "owner": "internal/consensus.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[1]", "cometbft/internal/consensus/reactor.go:28", "cometbft/node/controller_mediation.go:710"]},
+    {"group": "consensus-vote", "channel_id": 34, "types": ["Vote"], "owner": "internal/consensus.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[2]", "cometbft/internal/consensus/reactor.go:29", "cometbft/node/controller_mediation.go:716"]},
+    {"group": "consensus-vote-set-bits", "channel_id": 35, "types": ["VoteSetBits"], "owner": "internal/consensus.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[3]", "cometbft/internal/consensus/reactor.go:30", "cometbft/node/controller_mediation.go:718"]},
+    {"group": "state-sync-snapshot", "channel_id": 96, "types": ["SnapshotsRequest", "SnapshotsResponse"], "owner": "statesync.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[4]", "cometbft/statesync/reactor.go:23", "cometbft/node/controller_mediation.go:720"]},
+    {"group": "state-sync-chunk", "channel_id": 97, "types": ["ChunkRequest", "ChunkResponse"], "owner": "statesync.Reactor", "source_evidence": ["artifacts/01-binding.json selected_messages[5]", "cometbft/statesync/reactor.go:25", "cometbft/node/controller_mediation.go:724"]}
+  ],
+  "excluded_messages": [
+    {"group": "mempool-transaction-propagation", "channel_id": 48, "reason": "distinct unselected transaction route", "source_evidence": ["artifacts/01-binding.json excluded_messages[0]", "cometbft/node/controller_mediation.go selectedControllerRoutes"]},
+    {"group": "evidence-propagation", "channel_id": 56, "reason": "distinct unselected evidence route", "source_evidence": ["artifacts/01-binding.json excluded_messages[1]", "cometbft/node/controller_mediation.go selectedControllerRoutes"]},
+    {"group": "block-synchronization", "channel_id": 64, "reason": "distinct unselected block-sync route", "source_evidence": ["artifacts/01-binding.json excluded_messages[2]", "cometbft/node/controller_mediation.go selectedControllerRoutes"]},
+    {"group": "peer-exchange", "channel_id": 0, "reason": "distinct unselected peer-exchange route", "source_evidence": ["artifacts/01-binding.json excluded_messages[3]", "cometbft/node/controller_mediation.go selectedControllerRoutes"]},
+    {"group": "rpc-and-application-communication", "reason": "outside registered P2P Reactor channels", "source_evidence": ["artifacts/01-binding.json excluded_messages[4]"]},
+    {"group": "state-sync-light-and-consensus-parameter-p2p-families", "reason": "not registered in this revision", "source_evidence": ["artifacts/01-binding.json excluded_messages[5]"]}
+  ],
+  "bindings": {
+    "outbound_hooks": [
+      {"symbol": "p2p.(*peer).send", "covers": ["Peer.Send", "Peer.TrySend", "Switch.Broadcast", "Switch.TryBroadcast", "direct replies", "gossip", "retries"], "behavior": "selected messages exclusively call MediatedMessageSink.Submit after the ordinary wrap/marshal; unselected messages call the original MConnection continuation", "source_evidence": ["cometbft/p2p/peer.go:258", "cometbft/p2p/peer.go:270"]}
+    ],
+    "bypass_risks": [
+      {"risk": "lower MConnection byte APIs", "disposition": "production selected callers converge at peer.send; no new direct caller added", "source_evidence": ["artifacts/01-binding.json outbound_binding.bypass_risks[0]", "cometbft/p2p/peer.go:270"]},
+      {"risk": "accepted and dialed peer construction", "disposition": "peerConfig propagates the same sink to MultiplexTransport.wrapPeer", "source_evidence": ["cometbft/p2p/switch.go:666", "cometbft/p2p/switch.go:760", "cometbft/p2p/transport.go:500"]},
+      {"risk": "direct selected P2P inbound", "disposition": "createMConnection rejects selected routes before decode/dispatch when the sink is installed", "source_evidence": ["cometbft/p2p/peer.go:422"]}
+    ],
+    "callback": {
+      "method": "POST",
+      "path": "/message",
+      "content_type": "application/json",
+      "outer_fields": ["From", "To", "Data", "Type", "ID"],
+      "body_bound_config": "experimental_controller.callback_max_body_bytes",
+      "acceptance": "validated immutable work admitted to the bounded reinjection queue; not protocol execution",
+      "source_evidence": ["cometbft/node/controller_mediation.go:423", "cometbft/node/controller_mediation.go:652"]
+    },
+    "native_reinjection": {
+      "entry": "p2p.Reactor.Receive(p2p.Envelope)",
+      "registry": "p2p.NativeRouteRegistry frozen by Node.OnStart",
+      "peer_resolution": "current Switch PeerSet lookup before acceptance and again before dispatch",
+      "ordering": "single FIFO reinjection worker; callbacks are not deduplicated",
+      "source_evidence": ["cometbft/p2p/controller_mediation.go:79", "cometbft/node/controller_mediation.go:423", "cometbft/node/controller_mediation.go:528"]
+    },
+    "identity": {
+      "local": "p2p.NodeKey.ID",
+      "remote": "authenticated current p2p.Peer.ID",
+      "registration_fields": ["id", "alias", "addr"],
+      "message_id": "<From>_<To>_<process-lifetime per-destination counter starting at 0>",
+      "callback_id_validation": "ID retains the exact From_To_uint64 form and is never locally deduplicated",
+      "source_evidence": ["cometbft/p2p/key.go:30", "cometbft/node/controller_mediation.go:346", "cometbft/node/controller_mediation.go:568"]
+    },
+    "routing": {
+      "adapter_version": 1,
+      "adapter_fields": ["version byte", "channel byte", "big-endian uint32 wrapped length", "exact wrapped protobuf bytes"],
+      "selected_channel_ids": [32, 33, 34, 35, 96, 97],
+      "source_evidence": ["cometbft/node/controller_mediation.go:626", "cometbft/node/controller_mediation_test.go:166"]
+    },
+    "codec": {
+      "implementation": "github.com/cosmos/gogoproto/proto",
+      "wrapper_behavior": "ordinary types.Wrapper outbound and types.Unwrapper inbound behavior reused",
+      "semantic_validation": ["internal/consensus.MsgFromProto", "statesync.ValidateMessage forwarding to unchanged validateMsg"],
+      "source_evidence": ["cometbft/p2p/peer.go:270", "cometbft/p2p/controller_mediation.go:96", "cometbft/node/controller_mediation.go:735", "cometbft/statesync/validation_export.go:7"]
+    },
+    "configuration": {
+      "section": "experimental_controller",
+      "default_enabled": false,
+      "keys": ["enabled", "controller_address", "callback_listen_address", "callback_advertise_address", "node_id", "outbound_queue_capacity", "outbound_queue_bytes", "callback_queue_capacity", "callback_queue_bytes", "callback_max_body_bytes", "counter_registry_capacity", "registration_attempts", "registration_retry_delay", "request_timeout", "send_timeout", "shutdown_timeout"],
+      "source_evidence": ["cometbft/config/config.go:1498", "cometbft/config/config.toml.tpl"]
+    },
+    "lifecycle": {
+      "startup": ["validate", "freeze routes", "bind callback", "start workers", "register", "install sink", "listen original transport", "start Switch"],
+      "shutdown": ["serialize lifecycle transition", "remove future sink propagation under the Switch sink lock", "stop callback admission", "cancel controller requests", "close queues", "drain or account for retained work", "bound native-dispatch wait", "stop Switch", "close original transport"],
+      "fatal_owner": "Node stores the first typed cause, initiates orderly Stop, and enabled NewRunNodeCmd returns it after Quit closes",
+      "transition_ownership": "Node serializes OnStart and OnStop; controllerMediation serializes New, Starting, Running, Stopping, and Stopped transitions",
+      "source_evidence": ["cometbft/node/node.go:585", "cometbft/node/node.go:693", "cometbft/node/node.go:1049", "cometbft/cmd/cometbft/commands/run_node.go:100"]
+    }
+  },
+  "changes": [
+    {"path": "cometbft/config/config.go", "symbols": ["Config", "DefaultConfig", "TestConfig", "(*Config).ValidateBasic", "ControllerMediationConfig", "DefaultControllerMediationConfig", "(*ControllerMediationConfig).ValidateBasic"], "clauses": ["CORE-MODE-001", "CORE-MODE-002", "CORE-LIFE-001", "CORE-LIFE-002", "CMT-LIFE-001", "CMT-LIFE-002"], "source_evidence": ["git diff -- config/config.go", "cometbft/config/config.go:1498"]},
+    {"path": "cometbft/config/config.toml.tpl", "symbols": ["[experimental_controller] template"], "clauses": ["CORE-MODE-001", "CMT-LIFE-001", "CMT-LIFE-002"], "source_evidence": ["git diff -- config/config.toml.tpl"]},
+    {"path": "cometbft/config/controller_mediation_test.go", "symbols": ["TestControllerMediationConfigDefaults", "TestControllerMediationConfigValidation"], "clauses": ["CORE-MODE-001", "CORE-MODE-002", "CMT-LIFE-001", "CMT-LIFE-002"], "source_evidence": ["cometbft/config/controller_mediation_test.go"]},
+    {"path": "cometbft/p2p/controller_mediation.go", "symbols": ["SendMode", "MediatedMessageSink", "NativeRouteRegistry", "(*NativeRouteRegistry).Decode", "(*NativeRouteRegistry).Dispatch", "PeerMediationSink"], "clauses": ["CORE-INT-002", "CORE-RECV-004", "CORE-RECV-005", "CMT-ADAPTER-006", "CMT-ADAPTER-007"], "source_evidence": ["cometbft/p2p/controller_mediation.go"]},
+    {"path": "cometbft/p2p/controller_mediation_test.go", "symbols": ["TestControllerMediationSelectedSendModesAndNoFallback", "TestControllerMediationBroadcastAndTryBroadcast", "TestControllerMediationUnselectedAndDisabledRemainNative", "TestControllerMediationDirectInboundGate", "TestControllerMediationDisabledReceiveErrorsRemainNative", "TestControllerMediationAcceptedAndDialedPeerPropagation", "TestControllerMediationRouteRegistry", "TestControllerMediationSerializationFailureIsFatalWithoutFallback", "TestControllerMediationSwitchSinkLifecycleRace"], "clauses": ["CORE-MODE-002", "CMT-TEST-002", "CMT-TEST-003", "CMT-TEST-005", "CMT-TEST-006", "CMT-TEST-007"], "source_evidence": ["cometbft/p2p/controller_mediation_test.go"]},
+    {"path": "cometbft/p2p/peer.go", "symbols": ["peer", "newPeer", "(*peer).Send", "(*peer).TrySend", "(*peer).send", "createMConnection"], "clauses": ["CORE-MODE-002", "CORE-INT-002", "CORE-INT-003", "CORE-INT-004", "CORE-INT-006", "CORE-INT-007", "CORE-SEND-001", "CORE-SEND-002", "CMT-PROFILE-001", "CMT-SCOPE-003", "CMT-SELECT-005", "CMT-SELECT-006"], "source_evidence": ["git diff -- p2p/peer.go", "cometbft/p2p/peer.go:createMConnection"]},
+    {"path": "cometbft/p2p/switch.go", "symbols": ["Switch", "(*Switch).SetMediatedMessageSink", "(*Switch).mediatedMessageSink", "(*Switch).FreezeNativeRoutes", "(*Switch).acceptRoutine", "(*Switch).addOutboundPeerWithConfig"], "clauses": ["CORE-RECV-004", "CORE-RECV-005", "CORE-LIFE-003", "CORE-LIFE-007", "CMT-INTEGRATION-003", "CMT-LIFE-006"], "source_evidence": ["git diff -- p2p/switch.go", "cometbft/p2p/switch.go"]},
+    {"path": "cometbft/p2p/transport.go", "symbols": ["peerConfig", "(*MultiplexTransport).wrapPeer"], "clauses": ["CMT-INTEGRATION-002", "CMT-INTEGRATION-003"], "source_evidence": ["git diff -- p2p/transport.go", "cometbft/p2p/transport.go:500"]},
+    {"path": "cometbft/p2p/metrics.go", "symbols": ["Metrics.ControllerMediationTotal"], "clauses": ["CORE-RECV-010", "CMT-INTEGRATION-009"], "source_evidence": ["cometbft/p2p/metrics.go:26"]},
+    {"path": "cometbft/p2p/metrics.gen.go", "symbols": ["PrometheusMetrics", "NopMetrics"], "clauses": ["CORE-RECV-010", "CMT-INTEGRATION-009"], "source_evidence": ["generated by exact metricsgen command", "git diff -- p2p/metrics.gen.go"]},
+    {"path": "cometbft/node/controller_mediation.go", "symbols": ["controllerMediation", "controllerLifecycleState", "controllerMessage", "adapterPayload", "mediationFatalError", "newControllerMediation", "(*controllerMediation).Start", "(*controllerMediation).Stop", "(*controllerMediation).stopLocked", "(*controllerMediation).releaseQueuedReservations", "(*controllerMediation).Submit", "(*controllerMediation).acquireSubmitAdmission", "(*controllerMediation).serveMessage", "(*controllerMediation).submissionWorker", "(*controllerMediation).reinjectionWorker", "(*controllerMediation).fatal", "validateControllerMessageID", "selectedMessageBinding", "validateSelectedMessage"], "clauses": ["CORE-INT-001", "CORE-INT-005", "CORE-SEND-001", "CORE-SEND-002", "CORE-SEND-003", "CORE-SEND-004", "CORE-SEND-005", "CORE-ERR-001", "CORE-ERR-002", "CORE-ERR-003", "CORE-ERR-004", "CORE-ERR-005", "CORE-ERR-006", "CORE-ERR-007", "CORE-REG-001", "CORE-REG-002", "CORE-REG-003", "CORE-REG-004", "CORE-REG-006", "CORE-REG-007", "CORE-WIRE-001", "CORE-WIRE-002", "CORE-WIRE-003", "CORE-WIRE-004", "CORE-WIRE-005", "CORE-WIRE-006", "CORE-WIRE-007", "CORE-WIRE-008", "CORE-WIRE-009", "CORE-WIRE-010", "CORE-WIRE-011", "CORE-WIRE-012", "CORE-RECV-001", "CORE-RECV-002", "CORE-RECV-003", "CORE-RECV-007", "CORE-RECV-008", "CORE-RECV-009", "CORE-RECV-010", "CORE-LIFE-001", "CORE-LIFE-002", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-005", "CORE-LIFE-006", "CORE-LIFE-007", "CORE-SEC-001", "CORE-SEC-003", "CORE-SEC-004", "CORE-SEC-005", "CMT-ADAPTER-001", "CMT-ADAPTER-002", "CMT-ADAPTER-003", "CMT-ADAPTER-004", "CMT-ADAPTER-005", "CMT-ADAPTER-008", "CMT-ADAPTER-009", "CMT-ADAPTER-010", "CMT-ADAPTER-011", "CMT-ADAPTER-012", "CMT-ADAPTER-013", "CMT-ADAPTER-014", "CMT-ADAPTER-015", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-LIFE-007", "CMT-ERROR-001", "CMT-ERROR-002", "CMT-ERROR-003", "CMT-ERROR-004"], "source_evidence": ["cometbft/node/controller_mediation.go"]},
+    {"path": "cometbft/node/controller_mediation_test.go", "symbols": ["TestControllerMediationAdapterInventoryRoundTrip", "TestControllerMediationCallbackOrderAndDuplication", "TestControllerMediationCallbackRejections", "TestControllerMediationNoForwardNoReceive", "TestControllerMediationBoundsAndFailures", "TestControllerMediationOwnerFatalPropagation", "TestControllerMediationCallbackQueueFailure", "TestControllerMediationLifecycle", "TestControllerMediationConcurrentIDs", "TestControllerMediationNonBlockingAdmissionContention", "TestControllerMediationBlockingAdmissionBound", "TestControllerMediationReconnectUsesCurrentPeer", "TestControllerMediationReResolvesPeerBeforeDispatch", "TestControllerMediationConcurrentLifecycleTransitions", "TestControllerMediationShutdownReleasesQueuedAccounting", "TestControllerMediationBlockingNativeDispatchShutdown"], "clauses": ["CORE-SEND-001", "CORE-SEND-002", "CORE-ERR-007", "CORE-RECV-007", "CORE-RECV-008", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-006", "CORE-LIFE-007", "CMT-TEST-001", "CMT-TEST-003", "CMT-TEST-004", "CMT-TEST-006", "CMT-TEST-007", "CMT-TEST-009", "CMT-TEST-010", "CMT-TEST-011", "CMT-TEST-012"], "source_evidence": ["cometbft/node/controller_mediation_test.go"]},
+    {"path": "cometbft/node/node.go", "symbols": ["Node", "NewNodeWithCliParams", "(*Node).OnStart", "(*Node).OnStop", "(*Node).ControllerMediationEnabled", "(*Node).FatalError", "(*Node).recordControllerFatal"], "clauses": ["CORE-ERR-008", "CORE-LIFE-001", "CORE-LIFE-002", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-007", "CMT-INTEGRATION-004", "CMT-INTEGRATION-005", "CMT-INTEGRATION-008", "CMT-LIFE-003", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-ERROR-005"], "source_evidence": ["git diff -- node/node.go", "cometbft/node/node.go:585"]},
+    {"path": "cometbft/statesync/validation_export.go", "symbols": ["ValidateMessage"], "clauses": ["CORE-RECV-006", "CMT-ADAPTER-012"], "source_evidence": ["cometbft/statesync/validation_export.go", "cometbft/statesync/messages.go:18"]},
+    {"path": "cometbft/cmd/cometbft/commands/run_node.go", "symbols": ["NewRunNodeCmd", "controllerMediationNode", "waitForControllerMediationNode"], "clauses": ["CORE-ERR-008", "CORE-MODE-002", "CMT-ERROR-005"], "source_evidence": ["git diff -- cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/run_node.go:100"]},
+    {"path": "cometbft/cmd/cometbft/commands/testnet.go", "symbols": ["testnetFiles", "configureControllerMediationForTestnet"], "clauses": ["CMT-LIFE-004"], "source_evidence": ["git diff -- cmd/cometbft/commands/testnet.go", "cometbft/cmd/cometbft/commands/testnet.go:232"]},
+    {"path": "cometbft/cmd/cometbft/commands/controller_mediation_test.go", "symbols": ["TestControllerMediationRuntimeFatalExit", "TestControllerMediationIntegratedFailureNonZeroExit", "TestControllerMediationTestnetConfig", "controllerMediationCommandNode.Stop fatal-race fixture"], "clauses": ["CORE-ERR-008", "CORE-MODE-002", "CMT-LIFE-004", "CMT-ERROR-005", "CMT-TEST-006"], "source_evidence": ["cometbft/cmd/cometbft/commands/controller_mediation_test.go"]}
+  ],
+  "tests": {
+    "fake_controller_path": "cometbft/node/controller_mediation_test.go",
+    "fake_controller_production_reachable": false,
+    "focused_test_prefix": "TestControllerMediation",
+    "repair_coverage": [
+      "Production-derived Consensus and State Sync route inventory with valid native representatives, including nil-block Prevote and Precommit",
+      "Real Peer and MConnection selected, blocking, non-blocking, broadcast, TryBroadcast, accepted-peer, and dialed-peer boundaries; enabled unselected outbound PEX bytes use native MConnection with zero controller submissions; the same selected State Sync route is rejected when enabled and natively dispatched when disabled; disabled unmarshal and unwrap failures retain the ordinary peer-error taxonomy",
+      "Delayed callback forwarding, deliberate Proposal/BlockPart/Precommit reorder, duplicate Precommit, unchanged outer object, native-byte and peer equivalence, and ID-preserving HTTP 202 reinjection acceptance",
+      "Malformed, oversized, wrong-destination, unknown-source, unknown-route, invalid-adapter, invalid-native, queue-full, serialization, registration, outage, timeout, non-2xx, callback-listener, local-invariant, owner-fatal, and command non-zero cases"
+    ],
+    "source_evidence": ["cometbft/config/controller_mediation_test.go", "cometbft/p2p/controller_mediation_test.go", "cometbft/node/controller_mediation_test.go", "cometbft/cmd/cometbft/commands/controller_mediation_test.go"]
+  },
+  "verification": [
+    {"step": "F1", "command": "test \"$(go test ./config -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS"},
+    {"step": "F1", "command": "go test ./config -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "F2", "command": "(cd p2p && go run ../scripts/metricsgen -struct=Metrics)", "exit_code": 0, "result": "PASS"},
+    {"step": "F2", "command": "test \"$(go test ./p2p -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS"},
+    {"step": "F2", "command": "go test ./p2p -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "F3", "command": "test \"$(go test ./node -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS"},
+    {"step": "F3", "command": "go test ./node -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "F4", "command": "test \"$(go test ./cmd/cometbft/commands -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS"},
+    {"step": "F4", "command": "go test ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "F5", "command": "gofmt -w config/config.go config/controller_mediation_test.go p2p/controller_mediation.go p2p/controller_mediation_test.go p2p/peer.go p2p/switch.go p2p/transport.go p2p/metrics.go node/controller_mediation.go node/controller_mediation_test.go node/node.go statesync/validation_export.go cmd/cometbft/commands/controller_mediation_test.go cmd/cometbft/commands/run_node.go cmd/cometbft/commands/testnet.go", "exit_code": 0, "result": "PASS"},
+    {"step": "F5", "command": "go test ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1", "exit_code": 1, "result": "KNOWN_BASELINE_FAILURE", "baseline_id": "BASE-CONSENSUS-001", "additional_failures": false},
+    {"step": "diagnostic", "command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1", "exit_code": 1, "result": "KNOWN_BASELINE_FAILURE", "baseline_id": "BASE-CONSENSUS-001", "reused_prior_observation": true},
+    {"step": "F5", "command": "python3 -m json.tool ../artifacts/03-functional-report.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "F5", "command": "python3 -m json.tool ../artifacts/instrumentation-manifest.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "resume JSON validation", "command": "python3 -m json.tool artifacts/03-functional-report.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "resume JSON validation", "command": "python3 -m json.tool artifacts/instrumentation-manifest.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "resume machine consistency audit", "command": "python3 - <<'PY'\nimport hashlib,json,subprocess\nfrom pathlib import Path\nroot=Path('/home/nitro/Desktop/codex-instrumentation'); target=root/'cometbft'\nread=lambda p: json.loads((root/p).read_text())\nreport=read('artifacts/03-functional-report.json'); manifest=read('artifacts/instrumentation-manifest.json'); plan=read('artifacts/02-patch-plan.json'); binding=read('artifacts/01-binding.json'); baseline=read('artifacts/baseline-report.json')\nrequired_report={'artifact_type','status','downstream_allowed','phase_mode','initial_target_change_fingerprint','final_target_change_fingerprint','validated_baseline_evidence','spec_fingerprint','source_revision','files_read','files_changed','symbols_changed','clauses_implemented','clauses_incomplete','clauses_deferred_to_refinement','design_deviations','resolved_blockers','remaining_blocker','commands','assumptions','unresolved_risks','scope_expansion_requests'}\nrequired_manifest={'schema_version','target','selected_messages','excluded_messages','bindings','changes','verification','assumptions','unresolved_gaps'}\nassert required_report<=report.keys(); assert required_manifest<=manifest.keys()\nfp={'core_sha256':hashlib.sha256((root/'spec/core.md').read_bytes()).hexdigest(),'target_sha256':hashlib.sha256((root/'spec/target-cometbft.md').read_bytes()).hexdigest()}\nhead=subprocess.check_output(['git','rev-parse','HEAD'],cwd=target,text=True).strip()\nassert report['spec_fingerprint']==manifest['spec_fingerprint']==plan['spec_fingerprint']==baseline['spec_fingerprint']==fp\nassert report['source_revision']['commit']==manifest['target']['revision']==plan['source_revision']['commit']==baseline['source_revision']['commit']==head\nassert report['phase_mode']=='resume' and manifest['phase_mode']=='resume'\nassert (report['status']=='PASS') is (report['downstream_allowed'] is True)\ntracked=subprocess.check_output(['git','diff','--name-only'],cwd=target,text=True).splitlines(); untracked=sorted(subprocess.check_output(['git','ls-files','--others','--exclude-standard'],cwd=target,text=True).splitlines())\nactual={'cometbft/'+p for p in tracked+untracked}; authorized=set(plan['functional_write_paths'])|{x['path'] for x in plan['new_test_paths'] if 'functional' in x['phase']}\nassert actual<=authorized; assert not any(p.startswith(('spec/','schemas/','validators/','hidden-tests/')) for p in actual)\nassert not {p for p in actual if p.endswith('_test.go') and p not in {x['path'] for x in plan['new_test_paths']}}\nassert set(report['files_changed'])=={x['path'] for x in manifest['changes']}==actual\nh=hashlib.sha256(); h.update(b'tracked-diff\\0'); h.update(subprocess.check_output(['git','diff','--binary','--full-index','--no-ext-diff'],cwd=target))\nfor p in untracked:\n b=(target/p).read_bytes(); h.update(b'untracked\\0'); h.update(p.encode()); h.update(b'\\0'); h.update(str(len(b)).encode()); h.update(b'\\0'); h.update(b)\nchange_fp=h.hexdigest()\nassert report['initial_target_change_fingerprint']==report['final_target_change_fingerprint']==manifest['initial_target_change_fingerprint']==manifest['final_target_change_fingerprint']==change_fp\nassigned={c for s in plan['steps'] if s['id'].startswith('F') for c in s['specification_clauses']}; implemented={c for x in report['clauses_implemented'] for c in x['clauses']}\nassert assigned<=implemented and report['clauses_incomplete']==[]\nassert all(x['owner'] in {'R1','R2'} for x in report['clauses_deferred_to_refinement'])\nplanned=[c for s in plan['steps'] if s['id'].startswith('F') for c in s['verification_commands']]; records=report['commands']; manifest_records=manifest['verification']\nfor command in planned:\n matches=[x for x in records if x['command']==command]; assert matches\n assert any(x['exit_code']==0 or (x['exit_code']==1 and x['result']=='KNOWN_BASELINE_FAILURE' and x.get('baseline_id')=='BASE-CONSENSUS-001' and not x.get('additional_failures',False)) for x in matches)\n mm=[x for x in manifest_records if x['command']==command]; assert mm\n assert any(x['exit_code']==0 or (x['exit_code']==1 and x['result']=='KNOWN_BASELINE_FAILURE' and x.get('baseline_id')=='BASE-CONSENSUS-001' and not x.get('additional_failures',False)) for x in mm)\nevidence=report['validated_baseline_evidence']; known=baseline['known_failures'][0]; prior=baseline['prior_phase_observation_matches'][0]\nassert evidence['known_failure_id']==known['id']=='BASE-CONSENSUS-001' and evidence['matched_test']==known['test']=='TestStateFullRound1'\nassert evidence['matched_exit_code']==known['expected_exit_code']==1 and evidence['disposition']=='KNOWN_BASELINE_FAILURE' and evidence['rerun'] is False\nassert evidence['prior_functional_report_sha256']==prior['functional_report']['sha256'] and evidence['prior_manifest_sha256']==prior['instrumentation_manifest']['sha256']\nassert report['status']=='PASS' and report['downstream_allowed'] is True and report['remaining_blocker'] is None and not report['scope_expansion_requests']\nlabels={label for group in binding['selected_messages'] for label in group['type_labels']}; manifest_labels={label for group in manifest['selected_messages'] for label in group['types']}\nassert labels==manifest_labels and len(manifest['selected_messages'])==len(binding['selected_messages']) and len(manifest['excluded_messages'])==len(binding['excluded_messages'])\nassert all(manifest['bindings'].get(k) for k in ['outbound_hooks','bypass_risks','callback','native_reinjection','identity','routing','codec','configuration','lifecycle'])\nassert all(x.get('symbols') and x.get('clauses') and (x.get('source_evidence') or x.get('unresolved')) for x in manifest['changes']); assert all(v for v in report['symbols_changed'].values())\nassert not any('inline stage-gate audit' in x['command'] or \"[read-only machine consistency audit\" in x['command'] for x in records+manifest_records)\nassert any(x['command'].startswith(\"python3 - <<'PY'\\nimport hashlib,json,subprocess\") and x['exit_code']==0 for x in records)\nprint(f'PASS: resume audit validated {len(actual)} authorized changes, {len(assigned)} F clauses, {len(planned)} planned commands, exact baseline disposition, and fingerprint {change_fp}')\nPY", "exit_code": 0, "result": "PASS: 17 authorized changes, all F1-F5 clauses, 13 planned commands, exact baseline disposition, unchanged resume fingerprint"}
+  ],
+  "refinement_verification": [
+    {"step": "R1", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./p2p ./node ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS: no race-detector finding"},
+    {"step": "R1", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1", "exit_code": 0, "result": "PASS: all packages passed; BASE-CONSENSUS-001 did not recur; no race-detector finding"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go vet ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands", "exit_code": 0, "result": "PASS"},
+    {"step": "lint-refinement-format", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "gofmt -w node/controller_mediation_test.go p2p/controller_mediation_test.go node/controller_mediation.go cmd/cometbft/commands/run_node.go p2p/controller_mediation.go", "environment": {"GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS"},
+    {"step": "lint-refinement-focused-unit", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./node ./p2p ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1", "environment": {"GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS"},
+    {"step": "lint-refinement-focused-race", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./node -run '^TestControllerMediation(BoundsAndFailures|CallbackRejections|CallbackOrderAndDuplication|NonBlockingAdmissionContention|BlockingAdmissionBound|ReconnectUsesCurrentPeer|ReResolvesPeerBeforeDispatch|ConcurrentLifecycleTransitions|ShutdownReleasesQueuedAccounting|BlockingNativeDispatchShutdown|Lifecycle)$' -count=20", "environment": {"GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS: no race-detector finding"},
+    {"step": "lint-refinement-focused-race", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./p2p -run '^TestControllerMediationSwitchSinkLifecycleRace$' -count=20", "environment": {"GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS: no race-detector finding"},
+    {"step": "lint-refinement-focused-race", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./cmd/cometbft/commands -run '^TestControllerMediationRuntimeFatalExit$' -count=20", "environment": {"GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS: no race-detector finding"},
+    {"step": "R2-resume-final", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "golangci-lint run ./p2p/... ./internal/consensus/... ./statesync/... ./config/... ./node/... ./cmd/cometbft/commands/...", "environment": {"PATH_prefix": "$HOME/.local/golangci-lint-v1.60.3", "GOTOOLCHAIN": "go1.23.5"}, "exit_code": 0, "result": "PASS: exact full lint command completed with no findings; only the configured exportloopref deprecation warning was emitted"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1", "exit_code": 0, "result": "PASS"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "python3 -m json.tool ../artifacts/04-refinement-report.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "python3 -m json.tool ../artifacts/instrumentation-manifest.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"step": "focused-formatting", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "git diff --check -- cmd/cometbft/commands/run_node.go cmd/cometbft/commands/testnet.go config/config.go config/config.toml.tpl node/node.go p2p/metrics.gen.go p2p/metrics.go p2p/peer.go p2p/switch.go p2p/transport.go", "exit_code": 0, "result": "PASS"},
+    {"step": "focused-concurrency-lifecycle", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./node -run '^TestControllerMediation(BoundsAndFailures|CallbackRejections|NonBlockingAdmissionContention|BlockingAdmissionBound|ReconnectUsesCurrentPeer|ReResolvesPeerBeforeDispatch|ConcurrentLifecycleTransitions|ShutdownReleasesQueuedAccounting|Lifecycle)$' -count=20", "exit_code": 0, "result": "PASS"},
+    {"step": "focused-switch-lifecycle", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./p2p -run '^TestControllerMediationSwitchSinkLifecycleRace$' -count=20", "exit_code": 0, "result": "PASS"},
+    {"step": "focused-fatal-propagation", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./cmd/cometbft/commands -run '^TestControllerMediationRuntimeFatalExit$' -count=20", "exit_code": 0, "result": "PASS"},
+    {"step": "focused-blocking-dispatch", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./node -run '^TestControllerMediationBlockingNativeDispatchShutdown$' -count=20", "exit_code": 0, "result": "PASS"}
+  ],
+  "assumptions": [
+    "Enabled nodes use the ordinary MultiplexTransport and concrete peer construction paths.",
+    "Plain HTTP host:port addresses are used only on an isolated experiment network.",
+    "CustomReactors are construction-time options and selected route bindings must remain compatible when enabled.",
+    "Callback 2xx means bounded reinjection acceptance only.",
+    "No controller policy, secret, consensus-state observer, formal-model mapping, or fuzzing strategy is present."
+  ],
+  "resolved_infrastructure_evidence": [],
+  "unresolved_gaps": [],
+  "final_validation": [
+    {
+      "report": "artifacts/05-validation.json",
+      "status": "PASS",
+      "downstream_allowed": true,
+      "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716",
+      "clauses_passed": 158,
+      "unresolved_risks": [],
+      "unresolved_gaps": []
+    }
+  ]
+}

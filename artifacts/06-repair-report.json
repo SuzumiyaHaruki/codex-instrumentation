@@ -1,0 +1,216 @@
+{
+  "artifact_type": "repair_report",
+  "status": "PASS",
+  "specification_hashes": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "source_revision": {
+    "commit": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1"
+  },
+  "validation_report_sha256": "91e46c47c42419e98c7749f2b1579828acb119755ebef1b3bf994f2dc24bf2ea",
+  "revalidation_required": false,
+  "selected_violation_ids": [
+    "VAL-DISABLED-ERROR-001",
+    "VAL-TEST-UNSELECTED-OUTBOUND-001",
+    "VAL-TEST-DISABLED-INBOUND-001",
+    "VAL-MANIFEST-COVERAGE-001"
+  ],
+  "explicitly_unselected_violation_ids": [],
+  "merged_scope": {
+    "allowed_read_paths": [
+      "artifacts/instrumentation-manifest.json",
+      "cometbft/p2p/controller_mediation.go",
+      "cometbft/p2p/controller_mediation_test.go",
+      "cometbft/p2p/peer.go",
+      "cometbft/p2p/peer_test.go",
+      "cometbft/statesync/reactor.go"
+    ],
+    "allowed_write_paths": [
+      "artifacts/instrumentation-manifest.json",
+      "cometbft/p2p/controller_mediation.go",
+      "cometbft/p2p/controller_mediation_test.go",
+      "cometbft/p2p/peer.go"
+    ],
+    "protected_paths": [
+      "cometbft/p2p/peer_test.go",
+      "cometbft/statesync/reactor_test.go",
+      "hidden-tests/",
+      "schemas/",
+      "spec/",
+      "validators/"
+    ],
+    "repair_source_reads": [
+      "artifacts/instrumentation-manifest.json",
+      "cometbft/p2p/controller_mediation.go",
+      "cometbft/p2p/controller_mediation_test.go",
+      "cometbft/p2p/peer.go",
+      "cometbft/p2p/peer_test.go",
+      "cometbft/statesync/reactor.go"
+    ],
+    "actual_repair_writes": [
+      "artifacts/instrumentation-manifest.json",
+      "cometbft/p2p/controller_mediation_test.go",
+      "cometbft/p2p/peer.go"
+    ]
+  },
+  "per_violation_handoff": {
+    "VAL-DISABLED-ERROR-001": {
+      "read_paths": ["cometbft/p2p/peer.go", "cometbft/p2p/controller_mediation.go", "cometbft/p2p/controller_mediation_test.go", "cometbft/p2p/peer_test.go"],
+      "write_paths": ["cometbft/p2p/peer.go", "cometbft/p2p/controller_mediation.go", "cometbft/p2p/controller_mediation_test.go"],
+      "focused_commands": ["go test ./p2p -run '^TestControllerMediation' -count=1", "go test -race ./p2p -run '^TestControllerMediation' -count=20", "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1"],
+      "protected_paths": ["cometbft/p2p/peer_test.go", "spec/", "schemas/", "validators/", "hidden-tests/"],
+      "constraints": ["Preserve the exact pre-instrumentation ordinary decode and unwrap failure behavior when mediation is nil.", "Keep callback decoding on the native codec/wrapper path.", "Do not weaken selected direct-inbound rejection or add fallback."]
+    },
+    "VAL-TEST-UNSELECTED-OUTBOUND-001": {
+      "read_paths": ["cometbft/p2p/controller_mediation_test.go", "cometbft/p2p/peer.go", "cometbft/p2p/peer_test.go"],
+      "write_paths": ["cometbft/p2p/controller_mediation_test.go"],
+      "focused_commands": ["go test ./p2p -run '^TestControllerMediation' -count=1", "go test -race ./p2p -run '^TestControllerMediation' -count=20"],
+      "protected_paths": ["cometbft/p2p/peer_test.go", "spec/", "schemas/", "validators/", "hidden-tests/"],
+      "constraints": ["Use an enabled mediation sink that classifies the representative route/type as unselected.", "Observe actual native transport bytes and zero controller submissions.", "Do not modify production behavior merely to satisfy the test."]
+    },
+    "VAL-TEST-DISABLED-INBOUND-001": {
+      "read_paths": ["cometbft/p2p/controller_mediation_test.go", "cometbft/p2p/peer.go", "cometbft/statesync/reactor.go"],
+      "write_paths": ["cometbft/p2p/controller_mediation_test.go"],
+      "focused_commands": ["go test ./p2p -run '^TestControllerMediation' -count=1", "go test -race ./p2p -run '^TestControllerMediation' -count=20"],
+      "protected_paths": ["cometbft/p2p/peer_test.go", "cometbft/statesync/reactor_test.go", "spec/", "schemas/", "validators/", "hidden-tests/"],
+      "constraints": ["Exercise the same selected Channel and valid native message with and without mediation.", "Assert enabled rejection and disabled native delivery without weakening the gate."]
+    },
+    "VAL-MANIFEST-COVERAGE-001": {
+      "read_paths": ["artifacts/instrumentation-manifest.json", "cometbft/p2p/controller_mediation_test.go"],
+      "write_paths": ["artifacts/instrumentation-manifest.json"],
+      "focused_commands": ["python3 -m json.tool artifacts/instrumentation-manifest.json >/dev/null", "go test ./p2p -run '^TestControllerMediation' -count=1"],
+      "protected_paths": ["spec/", "schemas/", "validators/", "hidden-tests/"],
+      "constraints": ["Update the manifest only after the focused proofs exist and pass.", "Do not erase historical non-pass observations; distinguish historical evidence from current conformance evidence."]
+    }
+  },
+  "initial_target_change_fingerprint": "dca7804f3fc55036194091d3446855c0afb6532fa78781349ca8549e13ef99f1",
+  "final_target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716",
+  "write_path_hashes": {
+    "artifacts/instrumentation-manifest.json": {
+      "before_sha256": "1e4c27b42545630a2f322f23816651bf6b68b324611037a9704dc963e49a94e9",
+      "after_sha256": "8f2a9a2244ca2862538bbcd5861636eaf378c0ba44a1b640d44a4f8c3cd2efe2"
+    },
+    "cometbft/p2p/controller_mediation.go": {
+      "before_sha256": "a5055164e008b6b967020fe874ceeaaa6396866f8dfc200b8c00dd0d97696339",
+      "after_sha256": "a5055164e008b6b967020fe874ceeaaa6396866f8dfc200b8c00dd0d97696339"
+    },
+    "cometbft/p2p/controller_mediation_test.go": {
+      "before_sha256": "1c10285f38fc857857edcce4eff8da4948d738c3b9f5726ed4bbdb89fb0b70d2",
+      "after_sha256": "b56bd19981eafbdaedb81e494b61c6c4e615c6dd6a3479f4f65978983005db17"
+    },
+    "cometbft/p2p/peer.go": {
+      "before_sha256": "48203a68e3a3337ab16d3e89f57084af0ce9c2025b81efae2563fc2f784f01d8",
+      "after_sha256": "82ddef26761a958eddff700ac8bb7e3e5a1d55b336226c31e04af58fa546c983"
+    }
+  },
+  "files_and_symbols_read": {
+    "AGENTS.md": ["phase instructions"],
+    "prompts/06-repair.md": ["complete phase prompt"],
+    "artifacts/05-validation.json": ["status", "source_revision", "specification_hashes", "verification_toolchain", "violations", "commands"],
+    "artifacts/instrumentation-manifest.json": ["final_target_change_fingerprint", "phase_06_repair", "changes", "tests.repair_coverage"],
+    "spec/core.md": ["CORE-MODE-002", "CORE-PATCH-008"],
+    "spec/target-cometbft.md": ["CMT-PROFILE-001", "CMT-SCOPE-003", "CMT-SELECT-006", "CMT-TEST-002", "CMT-TEST-005", "CMT-TEST-013"],
+    "cometbft/go.mod": ["go directive"],
+    "cometbft/.github/workflows/go-version.env": ["GO_VERSION"],
+    "cometbft/.pre-commit-config.yaml": ["golangci-lint", "gofumpt"],
+    "cometbft/.golangci.yml": ["run", "linters", "issues", "linters-settings"],
+    "cometbft/p2p/peer.go": ["peer", "newPeer", "(*peer).Send", "(*peer).TrySend", "(*peer).send", "createMConnection"],
+    "cometbft/p2p/controller_mediation.go": ["MediatedMessageSink", "NativeRouteRegistry.Decode", "decodeNativeMessage", "PeerMediationSink"],
+    "cometbft/p2p/controller_mediation_test.go": ["recordingMediationSink", "newMediationPeer", "TestControllerMediationUnselectedAndDisabledRemainNative", "TestControllerMediationDirectInboundGate", "focused helpers"],
+    "cometbft/p2p/peer_test.go": ["TestPeerSend", "createOutboundPeerAndPerformHandshake", "remotePeer"],
+    "cometbft/statesync/reactor.go": ["SnapshotChannel", "Reactor.GetChannels", "Reactor.Receive"]
+  },
+  "files_changed": [
+    "artifacts/06-repair-report.json",
+    "artifacts/instrumentation-manifest.json",
+    "cometbft/p2p/controller_mediation_test.go",
+    "cometbft/p2p/peer.go"
+  ],
+  "symbols_changed": {
+    "cometbft/p2p/peer.go": ["createMConnection"],
+    "cometbft/p2p/controller_mediation_test.go": ["mediationNativeMessage", "newMediationPeer", "TestControllerMediationUnselectedAndDisabledRemainNative", "TestControllerMediationDirectInboundGate", "TestControllerMediationDisabledReceiveErrorsRemainNative", "mustMarshalP2PWrapper"],
+    "artifacts/instrumentation-manifest.json": ["final_target_change_fingerprint", "phase_06_repair", "changes", "tests.repair_coverage"]
+  },
+  "specification_clauses_addressed": ["CORE-MODE-002", "CORE-PATCH-008", "CMT-PROFILE-001", "CMT-SCOPE-003", "CMT-SELECT-006", "CMT-TEST-002", "CMT-TEST-005", "CMT-TEST-013"],
+  "observed_verification_toolchain": {
+    "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"",
+    "go": "go version go1.23.5 linux/amd64",
+    "go_environment": {"GOVERSION": "go1.23.5", "GOOS": "linux", "GOARCH": "amd64", "CGO_ENABLED": "1", "GOFLAGS": "", "GOTOOLCHAIN": "go1.23.5"},
+    "golangci_lint": "1.60.3 built with go1.23.0",
+    "compatibility_probe": "golangci-lint linters --config .golangci.yml >/dev/null",
+    "compatibility_probe_exit_code": 0
+  },
+  "violation_results": {
+    "VAL-DISABLED-ERROR-001": {
+      "disposition": "FIXED",
+      "root_cause": "createMConnection reused decodeNativeMessage, whose contextual error wrapping collapsed the original direct-P2P unmarshal and unwrap panic taxonomy.",
+      "repair": "Restored the revision's original clone, unmarshal, and unwrap sequence after the selected-route gate; callback decoding continues to use decodeNativeMessage.",
+      "clause_evidence": ["CORE-MODE-002", "CMT-PROFILE-001", "CMT-SCOPE-003", "CMT-SELECT-006"],
+      "verification_evidence": ["TestControllerMediationDisabledReceiveErrorsRemainNative", "original P2P anchor tests"]
+    },
+    "VAL-TEST-UNSELECTED-OUTBOUND-001": {
+      "disposition": "FIXED",
+      "root_cause": "The generated test sent from the remote MConnection into the local peer and never invoked local Peer.Send for an unselected envelope.",
+      "repair": "The enabled/unselected subtest now sends PexRequest through the real peer, captures the remote native MConnection bytes, and asserts zero controller submissions.",
+      "clause_evidence": ["CMT-TEST-002"],
+      "verification_evidence": ["TestControllerMediationUnselectedAndDisabledRemainNative"]
+    },
+    "VAL-TEST-DISABLED-INBOUND-001": {
+      "disposition": "FIXED",
+      "root_cause": "The enabled gate exercised State Sync channel 0x60 while the disabled proof exercised unselected PEX channel 0x00.",
+      "repair": "The direct-inbound gate test now sends the same valid SnapshotsRequest on State Sync channel 0x60 with mediation enabled and disabled, asserting rejection only when enabled and native delivery when disabled.",
+      "clause_evidence": ["CMT-TEST-005"],
+      "verification_evidence": ["TestControllerMediationDirectInboundGate"]
+    },
+    "VAL-MANIFEST-COVERAGE-001": {
+      "disposition": "FIXED",
+      "root_cause": "The manifest's broad real-peer/MConnection coverage claim was not backed by the two mandatory observations.",
+      "repair": "Updated repair coverage with the exact outbound and same-route inbound proofs, updated changed symbols/clauses/fingerprint, and preserved the earlier failed repair batch in history.",
+      "clause_evidence": ["CORE-PATCH-008", "CMT-TEST-013"],
+      "verification_evidence": ["manifest JSON validation", "final consistency audit"]
+    }
+  },
+  "command_attempts": [
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go version; go env GOVERSION GOOS GOARCH CGO_ENABLED GOFLAGS GOTOOLCHAIN; golangci-lint version; golangci-lint linters --config .golangci.yml >/dev/null", "exit_code": 0, "result": "PASS: compatible pinned toolchain reproduced", "target_change_fingerprint": "dca7804f3fc55036194091d3446855c0afb6532fa78781349ca8549e13ef99f1"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "export GOTOOLCHAIN=go1.23.5", "command": "gofmt -w p2p/peer.go p2p/controller_mediation_test.go; git diff --check -- p2p/peer.go p2p/controller_mediation_test.go", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "dd0dd5e1dd98346c5a4db7827a9db5b365450e61886bb07411395468d2540bd2"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "export GOTOOLCHAIN=go1.23.5", "command": "gofmt -w p2p/controller_mediation_test.go; git diff --check -- p2p/peer.go p2p/controller_mediation_test.go", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "cf074fd35a1bebf7272d8306dd3524752949b5cdf60f7786878c094efd1f771e"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go test ./p2p -list '^TestControllerMediation'", "exit_code": 0, "result": "PASS: 9 matching symbols", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go test ./p2p -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go test -race ./p2p -run '^TestControllerMediation' -count=20", "exit_code": 0, "result": "PASS: no race report in 20 repetitions", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "go vet ./p2p", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY http_proxy https_proxy all_proxy no_proxy; export GOTOOLCHAIN=go1.23.5; export PATH=\"$HOME/.local/golangci-lint-v1.60.3:$PATH\"", "command": "golangci-lint run ./p2p/...", "exit_code": 0, "result": "PASS: no findings; configured exportloopref warning only", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "environment_preparation": "export GOTOOLCHAIN=go1.23.5", "command": "git diff --check -- p2p/peer.go p2p/controller_mediation_test.go", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "environment_preparation": "none", "command": "python3 -m json.tool artifacts/instrumentation-manifest.json >/dev/null", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "environment_preparation": "none", "command": "python3 -m json.tool artifacts/06-repair-report.json >/dev/null", "exit_code": 0, "result": "PASS", "target_change_fingerprint": "4725431b94a794616f6ad0ad2ed944eb4c7d4c26441701554a2d4ec60573b716"}
+  ],
+  "final_fingerprint_verification_results": [
+    "go test ./p2p -list '^TestControllerMediation'",
+    "go test ./p2p -run '^TestControllerMediation' -count=1",
+    "go test -race ./p2p -run '^TestControllerMediation' -count=20",
+    "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1",
+    "git diff --check -- p2p/peer.go p2p/controller_mediation_test.go",
+    "go vet ./p2p",
+    "golangci-lint run ./p2p/...",
+    "python3 -m json.tool artifacts/instrumentation-manifest.json >/dev/null",
+    "python3 -m json.tool artifacts/06-repair-report.json >/dev/null"
+  ],
+  "manifest_changes": [
+    "Updated the final target fingerprint.",
+    "Recorded the final successful repair batch.",
+    "Added the disabled-error test symbol and specification clauses to changed-file evidence.",
+    "Replaced the broad boundary claim with exact unselected-outbound, same-selected-route disabled-inbound, and disabled-error proofs."
+  ],
+  "fixed_failures": ["VAL-DISABLED-ERROR-001", "VAL-TEST-UNSELECTED-OUTBOUND-001", "VAL-TEST-DISABLED-INBOUND-001", "VAL-MANIFEST-COVERAGE-001"],
+  "remaining_failures": [],
+  "new_failures": [],
+  "protected_paths_changed": [],
+  "assumptions": [
+    "The validation report's deterministic fingerprint algorithm is the tracked binary diff plus length-delimited untracked file content algorithm recorded by prior phases.",
+    "The generated p2p/controller_mediation_test.go did not exist at the source revision and is authorized for modification by all three source/test handoffs."
+  ],
+  "unresolved_risks": [],
+  "scope_expansion_requests": []
+}

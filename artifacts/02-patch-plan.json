@@ -1,0 +1,438 @@
+{
+  "artifact_type": "patch_plan",
+  "status": "PASS",
+  "downstream_allowed": true,
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "source_revision": {
+    "commit": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1",
+    "initial_worktree_clean": true,
+    "verified_worktree_clean": true
+  },
+  "binding_verification": {
+    "upstream_spec_review": {"status": "PASS", "downstream_allowed": true, "hashes_match": true},
+    "upstream_repository_binding": {"status": "PASS", "downstream_allowed": true, "hashes_match": true},
+    "revision_matches": true,
+    "baseline_matches": true,
+    "critical_evidence": [
+      {"fact": "all ordinary selected blocking, non-blocking, broadcast, reply, gossip, and retry sends converge at p2p.(*peer).send", "evidence": ["p2p/peer.go:253-286", "p2p/switch.go:265-287"], "result": "confirmed"},
+      {"fact": "ordinary inbound delivery performs route lookup, registered-prototype clone, gogoproto decode, unwrap, receive-byte accounting, authenticated source attribution, Reactor.Receive, and MConnection panic-to-peer-error recovery", "evidence": ["p2p/peer.go:402-445", "p2p/conn/connection.go:586", "p2p/conn/connection.go:340"], "result": "confirmed"},
+      {"fact": "Switch.AddReactor uniquely owns route, prototype, and Reactor maps and construction-time CustomReactors completes before Node.OnStart", "evidence": ["p2p/switch.go:163-197", "node/node.go:96-125", "node/node.go:565-570"], "result": "confirmed"},
+      {"fact": "current authenticated source lookup is concurrency-safe and keyed by stable p2p.ID", "evidence": ["p2p/peer_set.go:93-104", "p2p/switch.go:319-374", "p2p/switch.go:799-840"], "result": "confirmed"},
+      {"fact": "Node owns startup/shutdown while the command runner currently lacks a runtime error cause", "evidence": ["node/node.go:579-716", "libs/service/service.go:99-230", "cmd/cometbft/commands/run_node.go:97-131"], "result": "confirmed"}
+    ]
+  },
+  "binding_clarifications": [
+    {
+      "field": "inbound_binding.candidate_reinjection_entry",
+      "clarification": "Use a p2p-owned immutable NativeRouteRegistry snapshot frozen in Node.OnStart after all construction-time options, plus shared decode/unwrap and dispatch helpers. The callback validates from the snapshot and the worker decodes again from immutable wrapped bytes before invoking the frozen owning Reactor with a freshly resolved Peer.",
+      "specification": ["CORE-RECV-003", "CORE-RECV-004", "CORE-RECV-005", "CMT-ADAPTER-007", "CMT-INTEGRATION-006"],
+      "source_evidence": ["p2p/switch.go:163-197", "p2p/peer.go:402-445", "node/node.go:96-125"]
+    },
+    {
+      "field": "callback_contract.validation_before_acceptance",
+      "clarification": "Consensus pre-acceptance validation calls existing exported internal/consensus.MsgFromProto; State Sync gains only a new exported forwarding function in a new file that calls the unchanged validateMsg. Stateful Reactor behavior remains dispatch-time behavior.",
+      "specification": ["CORE-RECV-006", "CMT-ADAPTER-012"],
+      "source_evidence": ["internal/consensus/msgs.go:128-257", "statesync/messages.go:12-46"]
+    },
+    {
+      "field": "identity_and_lifecycle.fatal_propagation",
+      "clarification": "Enabled mode adds a typed fatal cause stored by Node and observed by NewRunNodeCmd; disabled mode retains the existing TrapSignal plus indefinite select behavior. Deep P2P/HTTP code only reports through the mediation service.",
+      "specification": ["CORE-ERR-008", "CMT-ERROR-005", "CORE-MODE-002"],
+      "source_evidence": ["cmd/cometbft/commands/run_node.go:97-131", "internal/os/os.go:20-34", "libs/service/service.go:167-230"]
+    }
+  ],
+  "binding_correction_requests": [],
+  "downstream_interfaces": {
+    "functional": {
+      "prompt": "prompts/03-generate-functional.md",
+      "plan_inputs": ["artifacts/02-patch-plan.json", "artifacts/02-patch-plan.md"],
+      "authorized_outputs": ["artifacts/03-functional-report.json", "artifacts/instrumentation-manifest.json"],
+      "source_read_contract": "functional_read_paths",
+      "source_write_contract": "functional_write_paths plus phase-appropriate additions in new_test_paths"
+    },
+    "refinement": {
+      "prompt": "prompts/04-refine-concurrency.md",
+      "required_inputs": ["artifacts/03-functional-report.json", "artifacts/instrumentation-manifest.json"],
+      "authorized_outputs": ["artifacts/04-refinement-report.json", "artifacts/instrumentation-manifest.json"],
+      "source_read_contract": "refinement_read_paths",
+      "source_write_contract": "refinement_write_paths plus approved additions in new_test_paths"
+    }
+  },
+  "preserved_bindings": [
+    "The selected domain remains exactly ten Consensus concrete types and four State Sync concrete types on Channels 0x20, 0x21, 0x22, 0x23, 0x60, and 0x61; all recorded excluded families remain unselected.",
+    "Local alias/From remains NodeKey.ID and remote To/callback From remains authenticated Peer.ID; validator, moniker, socket address, and peer index are never routing identities.",
+    "The shared outbound hook remains p2p.(*peer).send after its stopped-peer and channel checks, with no Reactor-call-site interception or MConnection replacement.",
+    "The native payload remains the exact bytes from the existing Wrapper.Wrap plus gogoproto marshal behavior.",
+    "The ordinary inbound semantic boundary remains owning Reactor.Receive with route, current authenticated Peer, registered codec/wrapper behavior, receive-byte metrics, validation, and peer-error behavior.",
+    "Both accepted and dialed MultiplexTransport peers use the same hook and PeerSet lifecycle; no stale Peer pointer crosses an asynchronous boundary.",
+    "Callback 2xx means validated bounded reinjection handoff only, never handler completion or protocol-state effect.",
+    "Disabled mode and all unselected traffic retain the existing direct transport, return values, metrics, startup, shutdown, configuration meaning, routes, schemas, formats, and timeout semantics.",
+    "Existing Config.Instrumentation remains Prometheus-only; controller mediation uses a distinct experimental_controller section.",
+    "The ordinary NewNodeWithCliParams/createSwitch construction and Node lifecycle remain the owners; there is no second node or transport implementation."
+  ],
+  "design_decisions": [
+    {
+      "id": "DD-01",
+      "decision": "Add a narrow p2p.MediatedMessageSink interface and install it on Switch before peers can be accepted or dialed. peer.send performs existing wrapping/marshal once, submits selected route/type/bytes to the sink, and never calls MConnection for selected traffic.",
+      "alternatives": ["per-Reactor hooks", "MConnection byte hook", "transport replacement"],
+      "why_minimal": "It changes the bound convergence point only and reuses authentication, peer lifecycle, and native codec behavior.",
+      "failure_behavior": "Pre-acceptance queue/byte backpressure returns the existing bool failure; encode/label/selection invariant failures mark mediation fatal; neither path falls back."
+    },
+    {
+      "id": "DD-02",
+      "decision": "Encode Data as binary version 1: one version byte, one Channel byte, one unsigned big-endian 32-bit native-length field, then an immutable copy of the exact wrapped protobuf bytes.",
+      "alternatives": ["JSON inside Data", "type-specific semantic payload", "route only outside Data"],
+      "why_minimal": "Six bytes of deterministic framing preserve route and exact native bytes without a second semantic representation.",
+      "failure_behavior": "Wrong version, truncated/trailing framing, length mismatch, unselected/unknown route, and supplied-byte decode errors are message-scoped callback rejections; an internally missing selected route/prototype/owner is fatal."
+    },
+    {
+      "id": "DD-03",
+      "decision": "Use a compile-time type switch covering the 14 bound concrete protobuf types for deterministic labels. Require route/type agreement outbound and after callback decode.",
+      "alternatives": ["reflect.Type.String", "protobuf descriptor names"],
+      "why_minimal": "The revision-local inventory is closed and explicit; no unstable package-path label leaks into the wire contract.",
+      "failure_behavior": "Valid selected outbound type without a label is fatal; callback Type mismatch or type/route mismatch is a message-scoped rejection."
+    },
+    {
+      "id": "DD-04",
+      "decision": "Freeze selected Switch routes once in enabled Node.OnStart after construction-time CustomReactors and before Switch.Start. NativeRouteRegistry copies route, prototype, Reactor, filled receive capacity, and metrics reference and exposes decode/unwrap/dispatch without mutable map access.",
+      "alternatives": ["runtime locks around AddReactor maps", "direct concurrent map reads", "duplicate registry in node"] ,
+      "why_minimal": "It adds no runtime mutation contract and makes the existing construction-only ownership explicit.",
+      "failure_behavior": "Missing, duplicate, nil, or incompatible selected bindings fail startup; post-freeze mutation is prohibited while enabled and detected as a fatal invariant if exposed."
+    },
+    {
+      "id": "DD-05",
+      "decision": "The callback parses and validates into immutable identity/label/route/wrapped-byte data, resolves a current running source before admission, and serializes queue admission under a short acceptance mutex. One event-driven worker re-resolves source and decodes from bytes at dispatch, holding no HTTP, queue, registry, or peer-set lock across Reactor.Receive.",
+      "alternatives": ["call Reactor in HTTP handler", "queue decoded mutable proto", "retain Peer pointer"],
+      "why_minimal": "It meets the bound acceptance semantics, FIFO callback acceptance order, multiplicity, and peer replacement requirements.",
+      "failure_behavior": "Invalid supplied data rejects only the request. Queue exhaustion is a fatal control-channel inability to accept valid delivery. Stale source or decode/registry corruption discovered after acceptance is fatal accepted-work loss. Native Reactor panic follows existing StopPeerForError behavior after the native boundary has been invoked."
+    },
+    {
+      "id": "DD-06",
+      "decision": "Use one bounded outbound channel and one bounded callback channel, each with both item and retained-byte admission. Non-blocking sends use immediate admission; blocking sends wait at most configured send_timeout, validated at <= the native 10-second bound. HTTP is performed only by the outbound worker.",
+      "alternatives": ["one goroutine per submission", "unbounded channels", "synchronous HTTP in Peer.Send"],
+      "why_minimal": "Two single-owner workers make accounting and ordering explicit and prevent TrySend from waiting on HTTP.",
+      "failure_behavior": "Outbound admission exhaustion is synchronous send rejection. Callback admission exhaustion is fatal and returns 503. Any worker loss after acceptance is fatal."
+    },
+    {
+      "id": "DD-07",
+      "decision": "Generate ID with a process-lifetime concurrent registry keyed by destination ID; each entry contains an atomic counter returning 0 first. Retain entries across disconnect/reconnect. Bound distinct destinations with counter_registry_capacity.",
+      "alternatives": ["global counter", "delete on disconnect", "unbounded map"],
+      "why_minimal": "It exactly implements directed-pair counters and prevents reuse after reconnect while bounding memory.",
+      "failure_behavior": "Capacity exhaustion is a diagnosed local invariant/resource failure that stops the run before acceptance; recovery is restart as a new experiment or a larger validated capacity, never direct fallback."
+    },
+    {
+      "id": "DD-08",
+      "decision": "Use standard net/http and encoding/json, a callback server with finite ReadHeaderTimeout, ReadTimeout, WriteTimeout, IdleTimeout, and a client Transport with finite DialContext and ResponseHeaderTimeout plus total request_timeout. Registration is listener-first with five shutdown-aware attempts and 250ms exponential backoff capped at 2s.",
+      "alternatives": ["web framework", "default unbounded HTTP client", "unbounded registration retry"],
+      "why_minimal": "Only standard-library facilities are needed.",
+      "failure_behavior": "Registration budget exhaustion rolls startup back. Any submission/client/listener failure after readiness is a fatal control-channel failure. All response bodies are closed; no response content is trusted."
+    },
+    {
+      "id": "DD-09",
+      "decision": "Node owns the mediation service, readiness, fatal cause, and shutdown. Enabled startup order is config validation (existing caller), freeze registry, bind callback, start workers, register, install/enable sink, then existing transport/Switch activity. Node watches the first typed fatal, stops orderly, and the enabled command path returns it after cleanup.",
+      "alternatives": ["panic/os.Exit in worker", "BaseService-wide error redesign", "readiness in State Sync transition"],
+      "why_minimal": "The change is localized to the existing owner and runner and leaves disabled behavior untouched.",
+      "failure_behavior": "Every partial-start stage rolls back initialized mediation resources. Stop is idempotent, stops new work, closes callback acceptance, drains accepted work within shutdown_timeout, cancels requests, joins workers, and records fatal if accepted work cannot be accounted for."
+    },
+    {
+      "id": "DD-10",
+      "decision": "Add structured logs carrying ID, From, To, Type, event, and exact error class, plus a P2P mediation counter labeled by event/error_class/message_type. Payload bytes and secrets are never logged.",
+      "alternatives": ["logs only", "high-cardinality identity metric labels"],
+      "why_minimal": "Logs provide correlation while the bounded metric label set provides required counting without cardinality growth.",
+      "failure_behavior": "Diagnostics distinguish submission, callback rejection, reinjection acceptance, reinjection failure, and protocol dispatch; they never claim protocol execution."
+    },
+    {
+      "id": "DD-11",
+      "decision": "When testnet generation reads an enabled shared configuration, keep the common controller and listen port, assign node_id by node index, and rewrite callback_advertise_address to hostnameOrIP(index) plus that port.",
+      "alternatives": ["new generator", "per-node manual configs"],
+      "why_minimal": "It reuses the existing final per-node rewrite loop.",
+      "failure_behavior": "Malformed enabled callback/controller configuration fails generation through Config.ValidateBasic."
+    }
+  ],
+  "resource_limits": [
+    {"resource": "outbound queue items", "default": 1024, "configuration": "experimental_controller.outbound_queue_capacity", "exhaustion": "TrySend returns false immediately; Send waits no more than send_timeout then returns false", "class": "synchronous send rejection", "diagnostic": "outbound_admission_rejected", "recovery": "capacity returns when worker dequeues; node remains healthy"},
+    {"resource": "outbound retained wrapped bytes", "default": 67108864, "configuration": "experimental_controller.outbound_queue_bytes", "exhaustion": "same as outbound item exhaustion before acceptance", "class": "synchronous send rejection", "diagnostic": "outbound_bytes_rejected", "recovery": "atomic byte reservation is released after submission or failed admission"},
+    {"resource": "callback queue items", "default": 256, "configuration": "experimental_controller.callback_queue_capacity", "exhaustion": "return 503, mark unhealthy, begin orderly shutdown", "class": "controller/control-channel failure", "diagnostic": "callback_admission_fatal", "recovery": "new experiment restart; no accepted instance is silently dropped"},
+    {"resource": "callback retained wrapped bytes", "default": 67108864, "configuration": "experimental_controller.callback_queue_bytes", "exhaustion": "return 503, mark unhealthy, begin orderly shutdown", "class": "controller/control-channel failure", "diagnostic": "callback_bytes_fatal", "recovery": "new experiment restart; reservation released after dispatch"},
+    {"resource": "callback HTTP body", "default": 22000000, "configuration": "experimental_controller.callback_max_body_bytes", "exhaustion": "return 413 and continue", "class": "message-scoped rejection", "diagnostic": "callback_oversized", "recovery": "later bounded requests remain accepted"},
+    {"resource": "decoded native payload", "default": "per frozen route: 1048576 Consensus, 4000000 Snapshot, 16000000 Chunk bytes", "configuration": "native ChannelDescriptor.RecvMessageCapacity", "exhaustion": "return 413 and continue", "class": "message-scoped rejection", "diagnostic": "native_payload_oversized", "recovery": "later valid requests remain accepted"},
+    {"resource": "counter registry", "default": 65536, "configuration": "experimental_controller.counter_registry_capacity", "exhaustion": "reject before acceptance, mark unhealthy, begin orderly shutdown", "class": "local invariant failure", "diagnostic": "counter_registry_exhausted", "recovery": "restart a new experiment or raise validated capacity; entries otherwise live for the process to prevent ID reuse"},
+    {"resource": "registration attempts", "default": 5, "configuration": "experimental_controller.registration_attempts", "exhaustion": "fail startup and roll back listener/workers", "class": "startup failure", "diagnostic": "registration_exhausted", "recovery": "fix controller and restart"},
+    {"resource": "registration backoff", "default": "250ms exponential, 2s cap", "configuration": "experimental_controller.registration_retry_delay; hard cap 2s", "exhaustion": "attempt budget governs failure", "class": "startup failure", "diagnostic": "registration_retry", "recovery": "shutdown cancellation interrupts backoff"},
+    {"resource": "HTTP operations", "default": "3s total request, 1s dial, 2s response-header", "configuration": "experimental_controller.request_timeout; subordinate hard bounds", "exhaustion": "registration attempt fails before readiness; submission failure is fatal after readiness", "class": "startup or controller/control-channel failure", "diagnostic": "controller_timeout", "recovery": "bounded registration retry only before readiness"},
+    {"resource": "blocking send admission", "default": "10s", "configuration": "experimental_controller.send_timeout", "exhaustion": "return false before acceptance", "class": "synchronous send rejection", "diagnostic": "blocking_admission_timeout", "recovery": "later sends may succeed; validated <= native 10s"},
+    {"resource": "shutdown drain", "default": "10s", "configuration": "experimental_controller.shutdown_timeout", "exhaustion": "record accepted-work loss as fatal and complete cancellation/join", "class": "local invariant failure", "diagnostic": "shutdown_accepted_work_timeout", "recovery": "process exits non-zero in enabled runner; restart experiment"},
+    {"resource": "workers", "default": "one outbound and one callback worker", "configuration": "hard-coded", "exhaustion": "not dynamically allocated; unexpected exit is fatal", "class": "local invariant or controller/control-channel failure by cause", "diagnostic": "worker_exit", "recovery": "orderly shutdown and experiment restart"},
+    {"resource": "outer identity/type/ID strings", "default": "Peer IDs fixed by p2p validation; Type selected inventory; ID <= 128 bytes", "configuration": "hard-coded validation", "exhaustion": "return 400/422 and continue", "class": "message-scoped rejection", "diagnostic": "callback_field_invalid", "recovery": "later valid requests remain accepted"}
+  ],
+  "steps": [
+    {
+      "id": "F1",
+      "phase": "functional",
+      "purpose": "Add distinct default-off controller-mediation configuration and validate every enabled address, timeout, queue, byte, retry, counter, and shutdown bound.",
+      "depends_on": [],
+      "binding_references": ["identity_and_lifecycle.configuration", "implementation_constraints[9]"],
+      "specification_clauses": ["CORE-MODE-001", "CORE-MODE-002", "CORE-LIFE-001", "CORE-LIFE-002", "CMT-LIFE-001", "CMT-LIFE-002"],
+      "source_evidence": ["config/config.go:77-166", "config/config.go:1426-1477", "config/config.toml.tpl:577-594"],
+      "files_to_read": ["cometbft/config/config.go", "cometbft/config/config.toml.tpl", "cometbft/config/config_test.go"],
+      "files_to_modify": ["cometbft/config/config.go", "cometbft/config/config.toml.tpl"],
+      "files_to_add": ["cometbft/config/controller_mediation_test.go"],
+      "existing_symbols": ["config.Config", "config.DefaultConfig", "config.TestConfig", "(*config.Config).ValidateBasic", "config.InstrumentationConfig"],
+      "planned_symbols": ["NEW config.ControllerMediationConfig", "NEW config.DefaultControllerMediationConfig", "NEW (*ControllerMediationConfig).ValidateBasic", "MODIFIED config.Config", "MODIFIED config.DefaultConfig", "MODIFIED config.TestConfig", "MODIFIED (*config.Config).ValidateBasic"],
+      "decision": "Use [experimental_controller], never [instrumentation], with the limits in resource_limits; disabled validation accepts zero operational use and preserves old defaults.",
+      "alternatives": ["reuse Config.Instrumentation", "CLI-only flags"],
+      "invariants": ["disabled default", "Prometheus configuration meaning unchanged", "enabled incomplete configuration fails before construction/start", "send_timeout <= 10s", "callback body bound can contain base64 of the largest legal framed payload"],
+      "tests_created": ["TestControllerMediationConfigDefaults", "TestControllerMediationConfigValidation"],
+      "verification_commands": ["test \"$(go test ./config -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "go test ./config -run '^TestControllerMediation' -count=1"],
+      "contained_risks": ["configuration naming collision", "invalid permanent limits"],
+      "rollback_or_failure": "No service is created when disabled; enabled invalid configuration returns ErrInSection for experimental_controller."
+    },
+    {
+      "id": "F2",
+      "phase": "functional",
+      "atomic_group": "p2p-mediation-boundary",
+      "purpose": "Implement the bound no-fallback outbound transition, direct-inbound selected-route gate, immutable native route registry, ordinary codec/dispatch reuse, and bounded diagnostics interface.",
+      "depends_on": ["F1"],
+      "binding_references": ["outbound_binding.selected_boundary", "outbound_binding.bypass_risks", "inbound_binding.ordinary_receive_chain", "inbound_binding.route_registry", "inbound_binding.candidate_reinjection_entry"],
+      "specification_clauses": ["CORE-INT-002", "CORE-INT-003", "CORE-INT-004", "CORE-INT-006", "CORE-INT-007", "CORE-SEND-001", "CORE-SEND-002", "CORE-RECV-004", "CORE-RECV-005", "CORE-RECV-006", "CORE-PATCH-002", "CMT-SELECT-005", "CMT-SELECT-006", "CMT-ADAPTER-006", "CMT-ADAPTER-007", "CMT-INTEGRATION-001", "CMT-INTEGRATION-002", "CMT-INTEGRATION-003", "CMT-INTEGRATION-009"],
+      "source_evidence": ["p2p/peer.go:253-286", "p2p/peer.go:402-445", "p2p/switch.go:163-197", "p2p/switch.go:265-287", "p2p/switch.go:628-742", "p2p/transport.go:38-55", "p2p/transport.go:499-541", "p2p/peer_set.go:93-104", "p2p/conn/connection.go:748-915", "types/wrapper.go:7-32"],
+      "files_to_read": ["cometbft/p2p/peer.go", "cometbft/p2p/switch.go", "cometbft/p2p/peer_set.go", "cometbft/p2p/transport.go", "cometbft/p2p/types.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go", "cometbft/p2p/conn/connection.go", "cometbft/types/wrapper.go", "cometbft/p2p/peer_test.go", "cometbft/p2p/switch_test.go"],
+      "files_to_modify": ["cometbft/p2p/peer.go", "cometbft/p2p/switch.go", "cometbft/p2p/transport.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go"],
+      "files_to_add": ["cometbft/p2p/controller_mediation.go", "cometbft/p2p/controller_mediation_test.go"],
+      "existing_symbols": ["p2p.(*peer).Send", "p2p.(*peer).TrySend", "p2p.(*peer).send", "p2p.createMConnection", "p2p.Switch", "p2p.(*Switch).AddReactor", "p2p.(*Switch).acceptRoutine", "p2p.(*Switch).addOutboundPeerWithConfig", "p2p.peerConfig", "p2p.MultiplexTransport.wrapPeer", "p2p.Metrics"],
+      "planned_symbols": ["NEW p2p.SendMode", "NEW p2p.MediatedMessageSink", "NEW p2p.NativeRouteRegistry", "NEW (*Switch).FreezeNativeRoutes", "NEW (*Switch).SetMediatedMessageSink", "NEW (*NativeRouteRegistry).Decode", "NEW (*NativeRouteRegistry).Dispatch", "MODIFIED (*peer).Send", "MODIFIED (*peer).TrySend", "MODIFIED (*peer).send", "MODIFIED createMConnection", "MODIFIED peerConfig", "MODIFIED (*MultiplexTransport).wrapPeer", "MODIFIED p2p.Metrics"],
+      "decision": "Apply DD-01, DD-04, and DD-10. Existing checks and wrap/marshal remain common; selected bytes branch only to sink, unselected bytes only to sendFunc. Direct selected inbound routes are diagnosed and dropped before decode/dispatch only when sink is enabled.",
+      "alternatives": ["duplicate callback codec in node", "lock Switch route maps at runtime", "call final Reactor directly without shared helper"],
+      "invariants": ["no selected MConnection call", "disabled branch preserves existing bool/bytes/metrics", "all peer construction directions carry the same sink", "frozen registry is created only after route construction", "no lock held across decode or Reactor.Receive", "panic follows StopPeerForError", "generated metrics file matches Metrics"],
+      "tests_created": ["TestControllerMediationSelectedSend", "TestControllerMediationDirectInboundGate", "TestControllerMediationRouteRegistry"],
+      "verification_commands": ["(cd p2p && go run ../scripts/metricsgen -struct=Metrics)", "test \"$(go test ./p2p -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "go test ./p2p -run '^TestControllerMediation' -count=1"],
+      "contained_risks": ["lower-layer bypass", "custom/mock Peer boundary", "unsafe registry maps", "ordinary receive behavior drift"],
+      "rollback_or_failure": "Missing selected route/prototype/owner prevents enabled readiness. Disabled and unselected traffic use the original code path."
+    },
+    {
+      "id": "F3",
+      "phase": "functional",
+      "atomic_group": "node-mediation-service",
+      "purpose": "Implement controller registration/submission, deterministic adapter/type inventory, bounded callback acceptance, native reinjection, IDs, accounting, and lifecycle-ready node ownership.",
+      "depends_on": ["F1", "F2"],
+      "binding_references": ["selected_messages", "callback_contract", "identity_and_lifecycle.local_identity", "identity_and_lifecycle.remote_identity", "identity_and_lifecycle.readiness_and_startup", "identity_and_lifecycle.shutdown"],
+      "specification_clauses": ["CORE-INT-001", "CORE-INT-005", "CORE-SEND-003", "CORE-SEND-004", "CORE-SEND-005", "CORE-ERR-001", "CORE-ERR-002", "CORE-ERR-003", "CORE-ERR-004", "CORE-ERR-005", "CORE-ERR-006", "CORE-ERR-007", "CORE-REG-001", "CORE-REG-002", "CORE-REG-003", "CORE-REG-004", "CORE-REG-005", "CORE-REG-006", "CORE-REG-007", "CORE-REG-008", "CORE-WIRE-001", "CORE-WIRE-002", "CORE-WIRE-003", "CORE-WIRE-004", "CORE-WIRE-005", "CORE-WIRE-006", "CORE-WIRE-007", "CORE-WIRE-008", "CORE-WIRE-009", "CORE-WIRE-010", "CORE-WIRE-011", "CORE-WIRE-012", "CORE-RECV-001", "CORE-RECV-002", "CORE-RECV-003", "CORE-RECV-007", "CORE-RECV-008", "CORE-RECV-009", "CORE-RECV-010", "CORE-LIFE-001", "CORE-LIFE-002", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-005", "CORE-LIFE-006", "CORE-LIFE-007", "CORE-SEC-001", "CORE-SEC-002", "CORE-SEC-003", "CORE-SEC-004", "CORE-SEC-005", "CMT-ADAPTER-001", "CMT-ADAPTER-002", "CMT-ADAPTER-003", "CMT-ADAPTER-004", "CMT-ADAPTER-005", "CMT-ADAPTER-008", "CMT-ADAPTER-009", "CMT-ADAPTER-010", "CMT-ADAPTER-011", "CMT-ADAPTER-012", "CMT-ADAPTER-013", "CMT-ADAPTER-014", "CMT-ADAPTER-015", "CMT-INTEGRATION-004", "CMT-INTEGRATION-005", "CMT-INTEGRATION-006", "CMT-INTEGRATION-007", "CMT-INTEGRATION-008", "CMT-LIFE-003", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-LIFE-007", "CMT-ERROR-001", "CMT-ERROR-002", "CMT-ERROR-003", "CMT-ERROR-004"],
+      "source_evidence": ["node/node.go:49-92", "node/node.go:303-570", "node/node.go:579-716", "node/setup.go:466-500", "p2p/key.go:15-48", "internal/consensus/msgs.go:128-257", "statesync/messages.go:12-46", "api/cometbft/consensus/v1/message.go:9-100", "api/cometbft/statesync/v1/message.go:9-64"],
+      "files_to_read": ["cometbft/node/node.go", "cometbft/node/setup.go", "cometbft/node/node_test.go", "cometbft/p2p/key.go", "cometbft/internal/consensus/msgs.go", "cometbft/internal/consensus/reactor.go", "cometbft/internal/consensus/msgs_test.go", "cometbft/internal/consensus/reactor_test.go", "cometbft/statesync/messages.go", "cometbft/statesync/reactor.go", "cometbft/statesync/messages_test.go", "cometbft/statesync/reactor_test.go", "cometbft/api/cometbft/consensus/v1/message.go", "cometbft/api/cometbft/statesync/v1/message.go", "cometbft/libs/service/service.go"],
+      "files_to_modify": ["cometbft/node/node.go"],
+      "files_to_add": ["cometbft/node/controller_mediation.go", "cometbft/node/controller_mediation_test.go", "cometbft/statesync/validation_export.go"],
+      "existing_symbols": ["node.Node", "node.NewNodeWithCliParams", "node.(*Node).OnStart", "node.(*Node).OnStop", "internal/consensus.MsgFromProto", "statesync.validateMsg", "p2p.NodeKey.ID", "p2p.IPeerSet.Get"],
+      "planned_symbols": ["NEW node.controllerMediation", "NEW node.controllerMessage", "NEW node.adapterPayload", "NEW node.mediationFatalError", "NEW newControllerMediation", "NEW (*controllerMediation).Start", "NEW (*controllerMediation).Stop", "NEW (*controllerMediation).Selected", "NEW (*controllerMediation).Submit", "NEW (*controllerMediation).serveMessage", "NEW (*controllerMediation).submissionWorker", "NEW (*controllerMediation).reinjectionWorker", "NEW encodeAdapterPayload", "NEW decodeAdapterPayload", "NEW selectedTypeLabel", "NEW validateSelectedMessage", "NEW statesync.ValidateMessage", "NEW (*node.Node).ControllerMediationEnabled", "NEW (*node.Node).FatalError", "NEW (*node.Node).waitControllerFatal", "MODIFIED node.Node", "MODIFIED node.NewNodeWithCliParams", "MODIFIED (*Node).OnStart", "MODIFIED (*Node).OnStop"],
+      "decision": "Apply DD-02, DD-03, DD-05 through DD-09 with the exact resource_limits table. The fake controller exists only in node/controller_mediation_test.go.",
+      "alternatives": ["production controller", "multiple callback workers", "mutable decoded-message queue", "unbounded maps/queues"],
+      "invariants": ["listener and workers precede registration and selected sends", "registration object has only id/alias/addr", "outer field spelling exact", "one ID per accepted source/destination submission and no callback dedupe", "callback acceptance FIFO", "current Peer checked before and after handoff", "accepted work released exactly once", "all HTTP operations finite", "no payload/secrets logged", "callback 2xx says reinjection acceptance only", "service stop safe after every partial Start stage"],
+      "tests_created": ["TestControllerMediationAdapterInventoryRoundTrip", "TestControllerMediationCallbackOrderAndDuplication", "TestControllerMediationCallbackRejections", "TestControllerMediationNoForwardNoReceive", "TestControllerMediationBoundsAndFailures", "TestControllerMediationLifecycle", "TestControllerMediationConcurrentIDs"],
+      "verification_commands": ["test \"$(go test ./node -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "go test ./node -run '^TestControllerMediation' -count=1"],
+      "contained_risks": ["payload/body bounds", "counter uniqueness", "callback ordering/duplication", "stale Peer", "native handler blocking", "HTTP and worker leaks", "partial-start rollback"],
+      "rollback_or_failure": "Start unwinds only initialized mediation resources before returning. Runtime fatal closes admission once, records the typed cause once, and asks the Node owner to stop; no worker panics or exits the process."
+    },
+    {
+      "id": "F4",
+      "phase": "functional",
+      "atomic_group": "fatal-owner-and-testnet",
+      "purpose": "Complete enabled-only non-zero fatal propagation and minimally extend existing testnet config rewriting.",
+      "depends_on": ["F3"],
+      "binding_references": ["identity_and_lifecycle.fatal_propagation", "identity_and_lifecycle.testnet_generation"],
+      "specification_clauses": ["CORE-ERR-008", "CORE-MODE-002", "CMT-LIFE-004", "CMT-ERROR-005"],
+      "source_evidence": ["cmd/cometbft/commands/run_node.go:97-131", "internal/os/os.go:20-34", "cmd/cometbft/commands/testnet.go:97-229", "node/node.go:49-92"],
+      "files_to_read": ["cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go", "cometbft/cmd/cometbft/commands/root_test.go", "cometbft/internal/os/os.go", "cometbft/cmd/cometbft/main.go"],
+      "files_to_modify": ["cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go"],
+      "files_to_add": ["cometbft/cmd/cometbft/commands/controller_mediation_test.go"],
+      "existing_symbols": ["commands.NewRunNodeCmd", "commands.testnetFiles", "commands.hostnameOrIP", "internal/os.TrapSignal", "PLANNED BY F3 (*node.Node).ControllerMediationEnabled", "PLANNED BY F3 (*node.Node).FatalError", "PLANNED BY F3 (*node.Node).waitControllerFatal"],
+      "planned_symbols": ["MODIFIED commands.NewRunNodeCmd", "MODIFIED commands.testnetFiles"],
+      "decision": "Disabled NewRunNodeCmd retains TrapSignal/select forever. Enabled mode waits on an ordinary signal channel or Node.Quit; it stops, then returns the stored typed fatal when present. Testnet reuses its per-node rewrite loop.",
+      "alternatives": ["change BaseService.Quit globally", "panic/os.Exit in service", "duplicate testnet generator"],
+      "invariants": ["fatal cause stored before stop closes Quit", "only first fatal wins", "cleanup finishes before error return", "disabled signal/runner behavior unchanged", "enabled user signal returns success if cleanup has no fatal accounting loss", "generated callback advertisements and IDs unique"],
+      "tests_created": ["TestControllerMediationRuntimeFatalExit", "TestControllerMediationTestnetConfig"],
+      "verification_commands": ["test \"$(go test ./cmd/cometbft/commands -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "go test ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1"],
+      "contained_risks": ["RunNode forever wait", "signal versus fatal race", "testnet address collision"],
+      "rollback_or_failure": "Enabled fatal returns an error after Node.Stop; disabled path is untouched. Invalid generated mediation configuration aborts generation."
+    },
+    {
+      "id": "F5",
+      "phase": "functional",
+      "purpose": "Run discoverable focused conformance checks and produce the functional report and implementation-grounded manifest.",
+      "depends_on": ["F1", "F2", "F3", "F4"],
+      "binding_references": ["test_anchors", "verification_commands", "selected_messages", "excluded_messages", "outbound_binding.bypass_risks"],
+      "specification_clauses": ["CORE-PROFILE-009", "CORE-PATCH-001", "CORE-PATCH-003", "CORE-PATCH-004", "CORE-PATCH-005", "CORE-PATCH-006", "CORE-PATCH-007", "CORE-PATCH-008", "CORE-PATCH-009", "CMT-TEST-001", "CMT-TEST-002", "CMT-TEST-003", "CMT-TEST-004", "CMT-TEST-005", "CMT-TEST-006", "CMT-TEST-009", "CMT-TEST-010", "CMT-TEST-011", "CMT-TEST-012", "CMT-TEST-013"],
+      "source_evidence": ["artifacts/01-binding.json selected_messages/excluded_messages/test_anchors", "spec/core.md:216-254", "spec/target-cometbft.md:103-115"],
+      "files_to_read": ["all functional_read_paths", "artifacts/02-patch-plan.json", "artifacts/02-patch-plan.md"],
+      "files_to_modify": [],
+      "files_to_add": ["artifacts/03-functional-report.json", "artifacts/instrumentation-manifest.json"],
+      "existing_symbols": [],
+      "planned_symbols": [],
+      "decision": "First prove every planned test filter discovers at least one test, then run focused packages and manifest consistency checks. Record actual changes/results rather than planned claims.",
+      "alternatives": ["filtered tests without discovery", "copy the plan as manifest"],
+      "invariants": ["manifest minimum keys retained", "actual revision/hashes/paths/results", "no policy/state observer/model/fuzzer", "functional PASS only if no fundamental safety gap remains"],
+      "tests_created": [],
+      "verification_commands": ["gofmt -w config/config.go config/controller_mediation_test.go p2p/controller_mediation.go p2p/controller_mediation_test.go p2p/peer.go p2p/switch.go p2p/transport.go p2p/metrics.go node/controller_mediation.go node/controller_mediation_test.go node/node.go statesync/validation_export.go cmd/cometbft/commands/controller_mediation_test.go cmd/cometbft/commands/run_node.go cmd/cometbft/commands/testnet.go", "go test ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1", "python3 -m json.tool ../artifacts/03-functional-report.json >/dev/null", "python3 -m json.tool ../artifacts/instrumentation-manifest.json >/dev/null"],
+      "contained_risks": ["stale manifest", "zero-test false pass", "selected inventory drift"],
+      "rollback_or_failure": "Any undiscovered test, failing build/test, or manifest mismatch makes the functional report FAILED/BLOCKED and downstream_allowed false."
+    },
+    {
+      "id": "R1",
+      "phase": "refinement",
+      "purpose": "Audit and harden ownership, admission accounting, callback total order, counter creation races, peer replacement, fatal/signal races, and partial/repeated lifecycle transitions against the actual functional patch.",
+      "depends_on": ["F5"],
+      "binding_references": ["implementation_constraints", "unresolved_risks", "callback_contract.hazards"],
+      "specification_clauses": ["CORE-SEND-001", "CORE-SEND-002", "CORE-SEND-005", "CORE-ERR-007", "CORE-ERR-008", "CORE-RECV-007", "CORE-RECV-008", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-005", "CORE-LIFE-006", "CORE-LIFE-007", "CMT-INTEGRATION-003", "CMT-INTEGRATION-006", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-LIFE-007", "CMT-TEST-007"],
+      "source_evidence": ["the actual F1-F4 patch plus p2p/peer_set.go:93-181, libs/service/service.go:99-230, internal/os/os.go:20-34"],
+      "files_to_read": ["all refinement_read_paths", "artifacts/03-functional-report.json", "artifacts/instrumentation-manifest.json"],
+      "files_to_modify": ["any existing path in refinement_write_paths only when the audit demonstrates a clause-linked defect", "the approved new test files"],
+      "files_to_add": [],
+      "existing_symbols": ["all new and modified symbols from F1-F4"],
+      "planned_symbols": ["No unconditional new production symbol; refine concrete ownership in the existing planned symbols"],
+      "decision": "Use race tests and deterministic barriers in test-only fake controller/Reactors to prove: non-blocking admission has no waits or I/O; byte reservations release exactly once; callback lock ends before native dispatch; one FIFO worker preserves accepted order/duplicates; counter entry creation cannot duplicate/reuse IDs; current Peer is resolved twice; first fatal wins; Start rollback and Stop are safe under repetition.",
+      "alternatives": ["claim concurrency from code review only", "add parallel workers"],
+      "invariants": ["no network/native call under unsafe lock", "no accepted-work loss", "no stale Peer retention", "no busy spin", "no post-stop acceptance", "no direct fallback", "nonzero enabled fatal after cleanup"],
+      "tests_created": [],
+      "verification_commands": ["go test -race ./p2p ./node ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1", "go test -race ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1"],
+      "contained_risks": ["rare interleavings and resource-accounting races"],
+      "rollback_or_failure": "A known unsafe interleaving cannot be deferred; refinement remains FAILED/BLOCKED until fixed or a scope request is approved."
+    },
+    {
+      "id": "R2",
+      "phase": "refinement",
+      "purpose": "Run final static/unit/race/regression checks and update the manifest and refinement report to the actual final patch.",
+      "depends_on": ["R1"],
+      "binding_references": ["verification_commands", "test_anchors"],
+      "specification_clauses": ["CORE-PATCH-006", "CORE-PATCH-007", "CORE-PATCH-008", "CMT-TEST-008", "CMT-TEST-013"],
+      "source_evidence": ["cometbft/Makefile", "cometbft/tests.mk", "cometbft/.golangci.yml", "artifacts/01-binding.json verification_commands"],
+      "files_to_read": ["all refinement_read_paths", "artifacts/03-functional-report.json", "artifacts/instrumentation-manifest.json"],
+      "files_to_modify": ["artifacts/instrumentation-manifest.json"],
+      "files_to_add": ["artifacts/04-refinement-report.json"],
+      "existing_symbols": [],
+      "planned_symbols": [],
+      "decision": "Re-run discovery, focused tests, all changed-package tests, race tests, vet/lint, and JSON checks. Update actual changed symbols/results and residual risks.",
+      "alternatives": ["reuse functional results"],
+      "invariants": ["JSON and source agree", "all filters nonempty", "original tests unchanged", "no unresolved unsafe interleaving"],
+      "tests_created": [],
+      "verification_commands": ["go vet ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands", "golangci-lint run ./p2p/... ./internal/consensus/... ./statesync/... ./config/... ./node/... ./cmd/cometbft/commands/...", "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1", "go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1", "go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1", "go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1", "python3 -m json.tool ../artifacts/04-refinement-report.json >/dev/null", "python3 -m json.tool ../artifacts/instrumentation-manifest.json >/dev/null"],
+      "contained_risks": ["tool availability and final manifest drift"],
+      "rollback_or_failure": "Unavailable lint is reported explicitly; any build, unit, race, vet, manifest, or applicable lint failure prevents PASS."
+    }
+  ],
+  "risk_disposition": [
+    {"id": "IC-01", "kind": "implementation_constraint", "source_text": "Disabled mode must preserve (*peer).send's stopped-peer/channel checks, wrapper selection, exact gogoproto bytes, metrics, bool results, native 10-second Send bound, and immediate TrySend behavior.", "owner": "F2", "disposition": "functional implementation and focused disabled/unselected regression proof"},
+    {"id": "IC-02", "kind": "implementation_constraint", "source_text": "Selected classification must cover exactly the ten Consensus and four State Sync concrete types on six exclusive routes; an unlabelled valid selected type or registered selected route without decoder/handler is fatal.", "owner": "F3", "disposition": "compile-time inventory/type switch plus startup registry audit and fatal invariant tests"},
+    {"id": "IC-03", "kind": "implementation_constraint", "source_text": "Controller adapter bytes must contain route plus the exact bytes produced after native Wrapper.Wrap and gogoproto marshal; callback must use the registered wrapper prototype, decode, and Unwrap.", "owner": "F2", "disposition": "shared p2p codec boundary and round-trip tests"},
+    {"id": "IC-04", "kind": "implementation_constraint", "source_text": "Request and decoded payload limits must respect 1 MiB Consensus, 4,000,000-byte Snapshot, and 16,000,000-byte Chunk RecvMessageCapacity values, plus bounded adapter framing/base64 overhead.", "owner": "F3", "disposition": "route capacity snapshot, six-byte framing, 22,000,000-byte default body cap, and boundary tests"},
+    {"id": "IC-05", "kind": "implementation_constraint", "source_text": "Peer.Send is allowed to wait no longer than the native 10-second queue timeout; Peer.TrySend and TryBroadcast-originated work must not gain blocking lookup, lock, serialization, HTTP, or queue behavior.", "owner": "R1", "disposition": "functional immediate/non-immediate admission design followed by refinement timing/race proof"},
+    {"id": "IC-06", "kind": "implementation_constraint", "source_text": "Broadcast has no result channel and per-peer work is already asynchronous; any success reported before controller submission completes creates fatal post-acceptance ownership on later failure.", "owner": "F3", "disposition": "queue acceptance transfers responsibility; worker HTTP failure reports first fatal to Node"},
+    {"id": "IC-07", "kind": "implementation_constraint", "source_text": "PeerSet.ForEach holds its mutex while invoking the callback, so instrumentation must not perform blocking controller or queue work while that peer-set lock is held.", "owner": "F2", "disposition": "preserve Broadcast goroutine boundary; sink work begins inside goroutine after ForEach callback returns, with focused proof"},
+    {"id": "IC-08", "kind": "implementation_constraint", "source_text": "Native Reactor.Receive is not a harmless callback: it may block, mutate PeerState, enqueue consensus work, send replies, or stop/remove a peer. No HTTP/queue/peer-map lock may be held across it.", "owner": "R1", "disposition": "single worker dispatch outside locks plus deterministic blocking/stopping Reactor test"},
+    {"id": "IC-09", "kind": "implementation_constraint", "source_text": "Switch AddReactor/RemoveReactor maps are not goroutine-safe and custom Reactors can replace standard registrations during construction; registry lifetime must be explicitly owned.", "owner": "F2", "disposition": "freeze immutable selected registry after Node options and before Switch.Start"},
+    {"id": "IC-10", "kind": "implementation_constraint", "source_text": "Do not reuse Config.Instrumentation ambiguously: in this revision that section and type are Prometheus metrics configuration.", "owner": "F1", "disposition": "new experimental_controller section; existing instrumentation fields untouched"},
+    {"id": "IC-11", "kind": "implementation_constraint", "source_text": "The standard library net/http and encoding/json are sufficient and already used by Node servers; no production web-framework dependency is needed.", "owner": "F3", "disposition": "standard library only; dependency diff checked in F5/R2"},
+    {"id": "UR-01", "kind": "unresolved_risk", "source_text": "The concrete runtime fatal-error propagation structure is absent today: RunNode blocks forever after startup and BaseService.Quit has no cause. Prompt 02 must bind an orderly typed owner path without changing disabled behavior.", "owner": "F4", "disposition": "Node first-fatal storage/watcher plus enabled-only command wait and typed return after Stop"},
+    {"id": "UR-02", "kind": "unresolved_risk", "source_text": "A safe route-registry access API or frozen snapshot does not currently exist; Prompt 02 must resolve ownership without concurrent access to non-thread-safe Switch registration maps.", "owner": "F2", "disposition": "NativeRouteRegistry immutable snapshot frozen at enabled startup"},
+    {"id": "UR-03", "kind": "unresolved_risk", "source_text": "The exact adapter payload framing/version and HTTP body limit remain planning decisions, constrained to route plus exact wrapped bytes and the discovered native capacities.", "owner": "F3", "disposition": "version 1 six-byte framing and validated 22,000,000-byte default body limit"},
+    {"id": "UR-04", "kind": "unresolved_risk", "source_text": "Broadcast APIs discard per-peer results, so asynchronous acceptance and fatal ownership require careful later synchronization design.", "owner": "R1", "disposition": "functional responsibility transfer plus refinement race/failure proof"},
+    {"id": "UR-05", "kind": "unresolved_risk", "source_text": "Native Reactor.Receive may synchronously stop the source peer or block; callback acceptance must remain a bounded handoff and later dispatch must account for peer disappearance and shutdown.", "owner": "R1", "disposition": "immutable bounded handoff, dispatch-time Peer lookup, no-lock dispatch, shutdown drain tests"},
+    {"id": "UR-06", "kind": "unresolved_risk", "source_text": "Controller HTTP timeout/retry values are not present in current source and must be chosen within the specification and existing 10-second blocking-send bound.", "owner": "F3", "disposition": "3s total HTTP timeout, 1s dial, 2s response-header, five registration attempts, bounded backoff, <=10s send admission"},
+    {"id": "UR-07", "kind": "unresolved_risk", "source_text": "Existing Config.Instrumentation naming collides semantically with the experiment's generic term instrumentation; later naming must avoid breaking Prometheus configuration.", "owner": "F1", "disposition": "distinct experimental_controller configuration and regression tests"}
+  ],
+  "functional_read_paths": [
+    "cometbft/config/config.go", "cometbft/config/config.toml.tpl", "cometbft/config/config_test.go", "cometbft/config/controller_mediation_test.go",
+    "cometbft/p2p/controller_mediation.go", "cometbft/p2p/controller_mediation_test.go", "cometbft/p2p/peer.go", "cometbft/p2p/peer_test.go", "cometbft/p2p/switch.go", "cometbft/p2p/switch_test.go", "cometbft/p2p/peer_set.go", "cometbft/p2p/transport.go", "cometbft/p2p/types.go", "cometbft/p2p/key.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go", "cometbft/p2p/conn/connection.go", "cometbft/types/wrapper.go",
+    "cometbft/api/cometbft/consensus/v1/message.go", "cometbft/api/cometbft/statesync/v1/message.go",
+    "cometbft/internal/consensus/msgs.go", "cometbft/internal/consensus/reactor.go", "cometbft/internal/consensus/msgs_test.go", "cometbft/internal/consensus/reactor_test.go",
+    "cometbft/statesync/messages.go", "cometbft/statesync/reactor.go", "cometbft/statesync/validation_export.go", "cometbft/statesync/messages_test.go", "cometbft/statesync/reactor_test.go",
+    "cometbft/node/controller_mediation.go", "cometbft/node/controller_mediation_test.go", "cometbft/node/node.go", "cometbft/node/node_test.go", "cometbft/node/setup.go",
+    "cometbft/libs/service/service.go", "cometbft/internal/os/os.go", "cometbft/cmd/cometbft/main.go", "cometbft/cmd/cometbft/commands/controller_mediation_test.go", "cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go", "cometbft/cmd/cometbft/commands/root_test.go",
+    "cometbft/Makefile", "cometbft/tests.mk", "cometbft/.golangci.yml"
+  ],
+  "functional_write_paths": [
+    "cometbft/config/config.go", "cometbft/config/config.toml.tpl",
+    "cometbft/p2p/controller_mediation.go", "cometbft/p2p/peer.go", "cometbft/p2p/switch.go", "cometbft/p2p/transport.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go",
+    "cometbft/node/controller_mediation.go", "cometbft/node/node.go", "cometbft/statesync/validation_export.go",
+    "cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go"
+  ],
+  "refinement_read_paths": [
+    "cometbft/config/config.go", "cometbft/config/config.toml.tpl", "cometbft/config/config_test.go", "cometbft/config/controller_mediation_test.go",
+    "cometbft/p2p/controller_mediation.go", "cometbft/p2p/controller_mediation_test.go", "cometbft/p2p/peer.go", "cometbft/p2p/peer_test.go", "cometbft/p2p/switch.go", "cometbft/p2p/switch_test.go", "cometbft/p2p/peer_set.go", "cometbft/p2p/transport.go", "cometbft/p2p/types.go", "cometbft/p2p/key.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go", "cometbft/p2p/conn/connection.go", "cometbft/types/wrapper.go",
+    "cometbft/api/cometbft/consensus/v1/message.go", "cometbft/api/cometbft/statesync/v1/message.go", "cometbft/internal/consensus/msgs.go", "cometbft/internal/consensus/reactor.go", "cometbft/internal/consensus/msgs_test.go", "cometbft/internal/consensus/reactor_test.go", "cometbft/statesync/messages.go", "cometbft/statesync/reactor.go", "cometbft/statesync/validation_export.go", "cometbft/statesync/messages_test.go", "cometbft/statesync/reactor_test.go",
+    "cometbft/node/controller_mediation.go", "cometbft/node/controller_mediation_test.go", "cometbft/node/node.go", "cometbft/node/node_test.go", "cometbft/node/setup.go", "cometbft/libs/service/service.go", "cometbft/internal/os/os.go", "cometbft/cmd/cometbft/main.go", "cometbft/cmd/cometbft/commands/controller_mediation_test.go", "cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go", "cometbft/cmd/cometbft/commands/root_test.go", "cometbft/Makefile", "cometbft/tests.mk", "cometbft/.golangci.yml"
+  ],
+  "refinement_write_paths": [
+    "cometbft/config/config.go", "cometbft/config/config.toml.tpl",
+    "cometbft/p2p/controller_mediation.go", "cometbft/p2p/peer.go", "cometbft/p2p/switch.go", "cometbft/p2p/transport.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go",
+    "cometbft/node/controller_mediation.go", "cometbft/node/node.go", "cometbft/statesync/validation_export.go",
+    "cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go"
+  ],
+  "new_test_paths": [
+    {"path": "cometbft/config/controller_mediation_test.go", "operation": "add", "phase": "functional; refinement may modify"},
+    {"path": "cometbft/p2p/controller_mediation_test.go", "operation": "add", "phase": "functional; refinement may modify"},
+    {"path": "cometbft/node/controller_mediation_test.go", "operation": "add", "phase": "functional; refinement may modify", "test_only_fake_controller": true},
+    {"path": "cometbft/cmd/cometbft/commands/controller_mediation_test.go", "operation": "add", "phase": "functional; refinement may modify"}
+  ],
+  "protected_paths": [
+    "spec/", "schemas/", "validators/", "hidden-tests/", "reference implementations",
+    "cometbft/api/**/*.proto", "cometbft/internal/consensus/reactor.go", "cometbft/statesync/reactor.go",
+    "cometbft/p2p/peer_test.go", "cometbft/p2p/switch_test.go", "cometbft/internal/consensus/msgs_test.go", "cometbft/internal/consensus/reactor_test.go", "cometbft/statesync/messages_test.go", "cometbft/statesync/reactor_test.go", "cometbft/config/config_test.go", "cometbft/node/node_test.go", "cometbft/cmd/cometbft/commands/root_test.go"
+  ],
+  "verification_commands": [
+    {"after_step": "F1", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test \"$(go test ./config -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0"},
+    {"after_step": "F1", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./config -run '^TestControllerMediation' -count=1"},
+    {"after_step": "F2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "(cd p2p && go run ../scripts/metricsgen -struct=Metrics)"},
+    {"after_step": "F2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test \"$(go test ./p2p -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0"},
+    {"after_step": "F2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./p2p -run '^TestControllerMediation' -count=1"},
+    {"after_step": "F3", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test \"$(go test ./node -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0"},
+    {"after_step": "F3", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./node -run '^TestControllerMediation' -count=1"},
+    {"after_step": "F4", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test \"$(go test ./cmd/cometbft/commands -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0"},
+    {"after_step": "F4", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1"},
+    {"after_step": "F5", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1"},
+    {"after_step": "R1", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./p2p ./node ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1"},
+    {"after_step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test -race ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1"},
+    {"after_step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go vet ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands"},
+    {"after_step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "golangci-lint run ./p2p/... ./internal/consensus/... ./statesync/... ./config/... ./node/... ./cmd/cometbft/commands/..."},
+    {"after_step": "R2", "cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "python3 -m json.tool ../artifacts/04-refinement-report.json >/dev/null && python3 -m json.tool ../artifacts/instrumentation-manifest.json >/dev/null"}
+  ],
+  "clause_coverage": {
+    "profile_and_binding": {"steps": ["F2", "F3", "F5"], "clauses": ["CORE-PROFILE-001", "CORE-PROFILE-002", "CORE-PROFILE-003", "CORE-PROFILE-004", "CORE-PROFILE-005", "CORE-PROFILE-006", "CORE-PROFILE-007", "CORE-PROFILE-008", "CORE-PROFILE-009", "CMT-PROFILE-001", "CMT-PROFILE-002", "CMT-ANALYSIS-001", "CMT-ANALYSIS-002", "CMT-ANALYSIS-003", "CMT-ANALYSIS-004", "CMT-ANALYSIS-005", "CMT-ANALYSIS-006", "CMT-ANALYSIS-007", "CMT-ANALYSIS-008", "CMT-ANALYSIS-009", "CMT-ANALYSIS-010"]},
+    "scope_and_selection": {"steps": ["F2", "F3", "F5"], "clauses": ["CORE-MODE-001", "CORE-MODE-002", "CORE-MODE-003", "CORE-MODE-004", "CORE-INT-001", "CORE-INT-002", "CORE-INT-003", "CORE-INT-004", "CORE-INT-005", "CORE-INT-006", "CORE-INT-007", "CMT-SCOPE-001", "CMT-SCOPE-002", "CMT-SCOPE-003", "CMT-SCOPE-004", "CMT-SCOPE-005", "CMT-SCOPE-006", "CMT-SELECT-001", "CMT-SELECT-002", "CMT-SELECT-003", "CMT-SELECT-004", "CMT-SELECT-005", "CMT-SELECT-006"]},
+    "send_wire_and_errors": {"steps": ["F2", "F3", "F4", "R1"], "clauses": ["CORE-SEND-001", "CORE-SEND-002", "CORE-SEND-003", "CORE-SEND-004", "CORE-SEND-005", "CORE-ERR-001", "CORE-ERR-002", "CORE-ERR-003", "CORE-ERR-004", "CORE-ERR-005", "CORE-ERR-006", "CORE-ERR-007", "CORE-ERR-008", "CORE-ERR-009", "CORE-REG-001", "CORE-REG-002", "CORE-REG-003", "CORE-REG-004", "CORE-REG-005", "CORE-REG-006", "CORE-REG-007", "CORE-REG-008", "CORE-WIRE-001", "CORE-WIRE-002", "CORE-WIRE-003", "CORE-WIRE-004", "CORE-WIRE-005", "CORE-WIRE-006", "CORE-WIRE-007", "CORE-WIRE-008", "CORE-WIRE-009", "CORE-WIRE-010", "CORE-WIRE-011", "CORE-WIRE-012", "CMT-ERROR-001", "CMT-ERROR-002", "CMT-ERROR-003", "CMT-ERROR-004", "CMT-ERROR-005"]},
+    "adapter_and_receive": {"steps": ["F2", "F3", "R1"], "clauses": ["CORE-RECV-001", "CORE-RECV-002", "CORE-RECV-003", "CORE-RECV-004", "CORE-RECV-005", "CORE-RECV-006", "CORE-RECV-007", "CORE-RECV-008", "CORE-RECV-009", "CORE-RECV-010", "CMT-ADAPTER-001", "CMT-ADAPTER-002", "CMT-ADAPTER-003", "CMT-ADAPTER-004", "CMT-ADAPTER-005", "CMT-ADAPTER-006", "CMT-ADAPTER-007", "CMT-ADAPTER-008", "CMT-ADAPTER-009", "CMT-ADAPTER-010", "CMT-ADAPTER-011", "CMT-ADAPTER-012", "CMT-ADAPTER-013", "CMT-ADAPTER-014", "CMT-ADAPTER-015"]},
+    "integration_lifecycle_security": {"steps": ["F1", "F2", "F3", "F4", "R1"], "clauses": ["CORE-LIFE-001", "CORE-LIFE-002", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-005", "CORE-LIFE-006", "CORE-LIFE-007", "CORE-SEC-001", "CORE-SEC-002", "CORE-SEC-003", "CORE-SEC-004", "CORE-SEC-005", "CMT-INTEGRATION-001", "CMT-INTEGRATION-002", "CMT-INTEGRATION-003", "CMT-INTEGRATION-004", "CMT-INTEGRATION-005", "CMT-INTEGRATION-006", "CMT-INTEGRATION-007", "CMT-INTEGRATION-008", "CMT-INTEGRATION-009", "CMT-LIFE-001", "CMT-LIFE-002", "CMT-LIFE-003", "CMT-LIFE-004", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-LIFE-007"]},
+    "patch_and_conformance": {"steps": ["F5", "R1", "R2"], "clauses": ["CORE-PATCH-001", "CORE-PATCH-002", "CORE-PATCH-003", "CORE-PATCH-004", "CORE-PATCH-005", "CORE-PATCH-006", "CORE-PATCH-007", "CORE-PATCH-008", "CORE-PATCH-009", "CMT-TEST-001", "CMT-TEST-002", "CMT-TEST-003", "CMT-TEST-004", "CMT-TEST-005", "CMT-TEST-006", "CMT-TEST-007", "CMT-TEST-008", "CMT-TEST-009", "CMT-TEST-010", "CMT-TEST-011", "CMT-TEST-012", "CMT-TEST-013"]}
+  },
+  "assumptions": [
+    "Enabled experiment nodes use the ordinary MultiplexTransport and concrete *p2p.peer produced by NewNodeWithCliParams; an application replacing the transport or Peer implementation is outside this revision-local binding and must not be represented as covered.",
+    "CustomReactors are construction-time options. Enabled startup rejects a selected route whose post-option prototype/owner no longer matches the bound selected inventory; disabled custom-reactor behavior remains unchanged.",
+    "Controller and callback addresses are host:port over plain HTTP on an isolated controlled network. This mode is explicitly unsafe on an untrusted network without external network controls.",
+    "A single outbound worker is sufficient for experiment throughput; controller policy may reorder/delay/duplicate after submission. A single reinjection worker is required to make callback acceptance order unambiguous.",
+    "The controller treats any non-2xx callback as non-acceptance. The node does not implement controller retry policy.",
+    "The 22,000,000-byte default callback body bound exceeds JSON/base64 overhead for a 16,000,000-byte native payload plus six-byte adapter framing and bounded identity/type fields. Validation must compute and test this relationship rather than rely only on the decimal constant."
+  ],
+  "residual_risks": [
+    {"risk": "Brief internal synchronization in sync.Map/atomic admission for TrySend must be shown not to become a semantic wait under contention.", "owner": "R1", "acceptance": "race and contention test with no timer/network/queue wait in TrySend path"},
+    {"risk": "A native Reactor.Receive may block longer than shutdown_timeout; the implementation must mark accepted-work accounting fatal and still avoid goroutine/resource leaks as far as Go permits without forcibly killing a goroutine.", "owner": "R1", "acceptance": "deterministic blocked Reactor test and explicit refinement report; no PASS if an unjoinable unsafe interleaving remains"},
+    {"risk": "golangci-lint availability is environmental.", "owner": "R2", "acceptance": "run exact command; report tool absence as a failed/unavailable check rather than a pass"}
+  ],
+  "scope_expansion_requests": [],
+  "files_read": [
+    "/home/nitro/Desktop/codex-instrumentation/AGENTS.md", "/home/nitro/Desktop/codex-instrumentation/prompts/02-plan-patch.md", "/home/nitro/Desktop/codex-instrumentation/spec/core.md", "/home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md", "/home/nitro/Desktop/codex-instrumentation/artifacts/00-spec-review.json", "/home/nitro/Desktop/codex-instrumentation/artifacts/01-binding.json", "/home/nitro/Desktop/codex-instrumentation/artifacts/01-analysis-notes.md", "/home/nitro/Desktop/codex-instrumentation/prompts/03-generate-functional.md", "/home/nitro/Desktop/codex-instrumentation/prompts/04-refine-concurrency.md",
+    "cometbft/p2p/peer.go", "cometbft/p2p/switch.go", "cometbft/p2p/peer_set.go", "cometbft/p2p/transport.go", "cometbft/p2p/types.go", "cometbft/p2p/key.go", "cometbft/p2p/metrics.go", "cometbft/p2p/metrics.gen.go", "cometbft/p2p/conn/connection.go", "cometbft/types/wrapper.go", "cometbft/config/config.go", "cometbft/config/config.toml.tpl", "cometbft/node/node.go", "cometbft/node/setup.go", "cometbft/libs/service/service.go", "cometbft/internal/os/os.go", "cometbft/cmd/cometbft/main.go", "cometbft/cmd/cometbft/commands/run_node.go", "cometbft/cmd/cometbft/commands/testnet.go", "cometbft/internal/consensus/msgs.go", "cometbft/internal/consensus/reactor.go", "cometbft/statesync/messages.go", "cometbft/statesync/reactor.go", "cometbft/api/cometbft/consensus/v1/message.go", "cometbft/api/cometbft/statesync/v1/message.go"
+  ],
+  "files_changed": ["artifacts/02-patch-plan.json", "artifacts/02-patch-plan.md"],
+  "material_commands": [
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "command": "sha256sum spec/core.md spec/target-cometbft.md && jq '{spec_review:{status:.status,downstream_allowed:.downstream_allowed,spec_fingerprint:.spec_fingerprint}}' artifacts/00-spec-review.json && jq '{binding:{status:.status,downstream_allowed:.downstream_allowed,spec_fingerprint:.spec_fingerprint,target:.target,initial_worktree_status:.initial_worktree_status,upstream_gate:.upstream_gate}}' artifacts/01-binding.json", "result": "PASS (exit 0): both SHA-256 values match both upstream artifacts; both gates are PASS/downstream_allowed true"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "git rev-parse HEAD && git describe --tags --always && git status --short", "result": "PASS (exit 0): d22299509a50140b74d81b113c4d78e4cf501994; v1.0.1; empty porcelain"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "command": "jq '{selected_messages,excluded_messages,outbound_binding,inbound_binding,callback_contract}' artifacts/01-binding.json", "result": "PASS (exit 0): parsed fixed message, outbound, inbound, and callback bindings"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "command": "jq '{identity_and_lifecycle,implementation_constraints,unresolved_risks,candidate_surface,test_anchors,verification_commands,evidence}' artifacts/01-binding.json", "result": "PASS (exit 0): parsed all 11 implementation constraints and 7 unresolved risks"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test -f p2p/peer.go -a -f p2p/switch.go -a -f p2p/peer_set.go -a -f p2p/transport.go -a -f node/node.go -a -f node/setup.go -a -f config/config.go -a -f cmd/cometbft/commands/run_node.go && rg -n 'func \\(p \\*peer\\) send|func createMConnection|func \\(sw \\*Switch\\) AddReactor|func \\(ps \\*PeerSet\\) Get|func \\(n \\*Node\\) OnStart|func \\(n \\*Node\\) OnStop|func NewRunNodeCmd' p2p/peer.go p2p/switch.go p2p/peer_set.go node/node.go cmd/cometbft/commands/run_node.go", "result": "PASS (exit 0): every critical path and symbol exists at the binding's recorded lines"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1 && go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1 && go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1 && go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1", "result": "PASS (exit 0): p2p 0.667s; internal/consensus 0.036s; statesync 0.545s; config 0.024s"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "command": "python3 -m json.tool artifacts/02-patch-plan.json >/dev/null", "result": "PASS (exit 0): JSON syntax valid"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation", "command": "python3 -c \"import json,re,pathlib; r=pathlib.Path('.'); p=json.loads((r/'artifacts/02-patch-plan.json').read_text()); b=json.loads((r/'artifacts/01-binding.json').read_text()); ids={s['id'] for s in p['steps']}; cov={c for g in p['clause_coverage'].values() for c in g['clauses']}; req=set(re.findall(r'\\*\\*((?:CORE|CMT)-[A-Z]+-\\d{3})',(r/'spec/core.md').read_text()+(r/'spec/target-cometbft.md').read_text())); assert ids=={'F1','F2','F3','F4','F5','R1','R2'} and req<=cov and len(p['risk_disposition'])==len(b['implementation_constraints'])+len(b['unresolved_risks'])==18; assert all(set(p[k.replace('write','write')])<=set(p[k.replace('write','read')]) for k in ('functional_write_paths','refinement_write_paths')); print('PASS: graph/path/risk/clause summary')\"", "result": "PASS (exit 0): graph/path/risk/clause summary"},
+    {"cwd": "/home/nitro/Desktop/codex-instrumentation/cometbft", "command": "test -z \"$(git status --short)\"", "result": "PASS (exit 0): target source worktree remains clean"}
+  ]
+}

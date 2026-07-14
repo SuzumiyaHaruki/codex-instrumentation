@@ -1,0 +1,242 @@
+{
+  "artifact_type": "baseline_report",
+  "status": "PASS",
+  "downstream_allowed": true,
+  "producer": "experiment_runner",
+  "recorded_at": "2026-07-14T18:32:00+08:00",
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "source_revision": {
+    "commit": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1",
+    "detached_worktree": true,
+    "worktree_clean_before": true,
+    "worktree_clean_after": true
+  },
+  "environment": {
+    "go_version": "go1.25.8",
+    "goos": "linux",
+    "goarch": "amd64",
+    "cgo_enabled": true,
+    "goflags": "",
+    "gomaxprocs": "unset",
+    "rpc_baseline_experiment": {
+      "primary_go_version": "go1.23.5",
+      "control_go_version": "go1.25.8",
+      "proxy_enabled_environment": {
+        "http_proxy_present": true,
+        "https_proxy_present": true,
+        "no_proxy": "localhost,127.0.0.1,::1",
+        "unix_socket_pseudo_host_excluded_from_no_proxy": true
+      },
+      "normalized_environment": "HTTP_PROXY, HTTPS_PROXY, ALL_PROXY, NO_PROXY and their lowercase forms unset"
+    }
+  },
+  "commands": [
+    {
+      "id": "BASE-CONSENSUS-001-RUN-001",
+      "cwd": "/tmp/cometbft-baseline-d222995",
+      "cwd_role": "clean detached worktree at source_revision.commit",
+      "command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1 -timeout=10m",
+      "measurement_wrapper": "/usr/bin/time -f 'elapsed=%E user=%U system=%S max_rss_kb=%M exit=%x'",
+      "exit_code": 1,
+      "result": "KNOWN_BASELINE_FAILURE",
+      "timed_out": true,
+      "test_timeout": "10m0s",
+      "package_reported_duration_seconds": 600.068,
+      "wall_duration": "10:05.73",
+      "user_cpu_seconds": 11.41,
+      "system_cpu_seconds": 3.25,
+      "max_rss_kb": 384640,
+      "log": {
+        "runner_local_path": "/tmp/cometbft-baseline-TestStateFullRound1.log",
+        "sha256": "34a255499e0c8c0fd34fc6edf4734b12231b3cacd83eb3660d23690eceee0dc0",
+        "bytes": 4381,
+        "lines": 84
+      }
+    },
+    {
+      "id": "BASE-RPC-001-PROXY-RUNS",
+      "cwd": "/tmp/cometbft-rpc-baseline-d222995-20260714",
+      "cwd_role": "clean detached worktree at source_revision.commit",
+      "command": "GOTOOLCHAIN=go1.23.5 go test ./rpc/jsonrpc -run '^TestServersAndClientsBasicV1$' -count=1",
+      "measurement_wrapper": "/usr/bin/time -f 'elapsed=%E user=%U system=%S max_rss_kb=%M exit=%x'",
+      "environment": "inherited HTTP_PROXY/HTTPS_PROXY; NO_PROXY=localhost,127.0.0.1,::1",
+      "repetitions": 3,
+      "exit_codes": [1, 1, 1],
+      "result": "KNOWN_BASELINE_FAILURE",
+      "logs": [
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-run1.log", "sha256": "92fe7c6e080eb2198013219492ad53e362c1aaf7267015d672ede20306e40ceb", "bytes": 16453, "lines": 71},
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-run2.log", "sha256": "c5fa37c8f893471fa6f0991ef7e178a8ff3932f04df4556f099a89de47f4ec90", "bytes": 16459, "lines": 71},
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-run3.log", "sha256": "2c934f7b65b576f850951d23ff354f61eb1ab3ea1407a0c29ea22b033272ec0f", "bytes": 16467, "lines": 71}
+      ]
+    },
+    {
+      "id": "BASE-RPC-001-NO-PROXY-CONTROL",
+      "cwd": "/tmp/cometbft-rpc-baseline-d222995-20260714",
+      "cwd_role": "same clean detached worktree as BASE-RPC-001-PROXY-RUNS",
+      "command": "env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u NO_PROXY -u http_proxy -u https_proxy -u all_proxy -u no_proxy GOTOOLCHAIN=go1.23.5 go test ./rpc/jsonrpc -run '^TestServersAndClientsBasicV1$' -count=1",
+      "measurement_wrapper": "/usr/bin/time -f 'elapsed=%E user=%U system=%S max_rss_kb=%M exit=%x'",
+      "repetitions": 3,
+      "exit_codes": [0, 0, 0],
+      "result": "PASS",
+      "logs": [
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-noproxy-run1.log", "sha256": "5b8de02a22ed43ae4cb0242c3c45ccd9d66df90f17a3ebe2ec9c62858c9228b0", "bytes": 116, "lines": 2},
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-noproxy-run2.log", "sha256": "3107c85eb238b0f29115a837edc582366c6867de5b61b31b4122be2116c318af", "bytes": 116, "lines": 2},
+        {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.23.5-noproxy-run3.log", "sha256": "61469de2cbc5144734d8d51c337b7a35295296f2e35a64c662b17db25c85e4a6", "bytes": 116, "lines": 2}
+      ]
+    },
+    {
+      "id": "BASE-RPC-001-TOOLCHAIN-CONTROL",
+      "cwd": "/tmp/cometbft-rpc-baseline-d222995-20260714",
+      "cwd_role": "same clean detached worktree as BASE-RPC-001-PROXY-RUNS",
+      "command": "GOTOOLCHAIN=local go test ./rpc/jsonrpc -run '^TestServersAndClientsBasicV1$' -count=1",
+      "measurement_wrapper": "/usr/bin/time -f 'elapsed=%E user=%U system=%S max_rss_kb=%M exit=%x'",
+      "environment": "inherited proxy variables; local toolchain go1.25.8",
+      "exit_code": 1,
+      "result": "KNOWN_BASELINE_FAILURE",
+      "log": {"runner_local_path": "/tmp/cometbft-rpc-baseline-go1.25.8-run1.log", "sha256": "cca16c83825e03cab30cb7f41f57a424e33912673deeba54b05cf36ec7221746", "bytes": 16447, "lines": 71}
+    }
+  ],
+  "known_failures": [
+    {
+      "id": "BASE-CONSENSUS-001",
+      "classification": "pre-instrumentation baseline timeout",
+      "package": "github.com/cometbft/cometbft/internal/consensus",
+      "test": "TestStateFullRound1",
+      "expected_exit_code": 1,
+      "expected_timeout": "10m0s",
+      "stable_signature": {
+        "required_substrings": [
+          "panic: test timed out after 10m0s",
+          "TestStateFullRound1 (10m0s)",
+          "internal/consensus.(*State).GetRoundState",
+          "libs/pubsub.(*state).send",
+          "types.(*EventBus).PublishEventValidBlock",
+          "internal/consensus.(*State).addVote"
+        ],
+        "blocked_relationship": "TestStateFullRound1 waits for State.GetRoundState read locking while State.addVote is blocked publishing a valid-block event through pubsub"
+      },
+      "matching_policy": {
+        "require_same_revision": true,
+        "require_same_test": true,
+        "require_all_signature_substrings": true,
+        "allow_additional_test_failure": false,
+        "allow_build_or_compile_failure": false,
+        "allow_instrumentation_specific_failure": false,
+        "allow_explicit_quarantine": true,
+        "disposition": "Record the isolated observation's non-zero exit as KNOWN_BASELINE_FAILURE; never rewrite it as a successful test. The exact test may be quarantined from the aggregate package pass/fail command only under QUARANTINE-CONSENSUS-001, while every other package test must pass independently."
+      },
+      "scope": "Only the exact TestStateFullRound1 timeout signature above is covered."
+    },
+    {
+      "id": "BASE-RPC-001",
+      "classification": "pre-instrumentation, proxy-environment-induced RPC failure",
+      "package": "github.com/cometbft/cometbft/rpc/jsonrpc",
+      "test": "TestServersAndClientsBasicV1",
+      "expected_exit_code": 1,
+      "stable_signature": {
+        "required_substrings": [
+          "TestServersAndClientsBasicV1",
+          "jsonrpc_test.go:364",
+          "socket=unix method=CONNECT url=//.tmp.rpc_test.sock:80 status=301",
+          "Moved Permanently"
+        ],
+        "cause_relationship": "WSClient uses http.ProxyFromEnvironment for the Unix-socket pseudo-host. With inherited proxy variables and no matching NO_PROXY entry, the WebSocket dial sends CONNECT //.tmp.rpc_test.sock:80 through a NetDial function that connects to the Unix socket; the RPC HTTP mux returns its canonical-path 301 before the WebSocket handler is reached.",
+        "controlled_observation": "The test failed 3/3 with inherited proxy variables and passed 3/3 after removing all uppercase and lowercase proxy variables in the same clean worktree under Go 1.23.5. It also reproduced under Go 1.25.8 with proxies enabled."
+      },
+      "matching_policy": {
+        "require_same_revision": true,
+        "require_same_test": true,
+        "require_all_signature_substrings": true,
+        "require_proxy_environment": true,
+        "allow_additional_test_failure": false,
+        "allow_build_or_compile_failure": false,
+        "allow_instrumentation_specific_failure": false,
+        "disposition": "Treat the proxy-enabled observation as KNOWN_BASELINE_FAILURE, then normalize the verification environment by unsetting all uppercase and lowercase proxy variables and rerun the exact test. The normalized run must pass; otherwise the remaining failure is unexplained. Never rewrite the proxy-enabled non-zero exit as a passing command."
+      },
+      "scope": "Only the exact Unix-socket WebSocket CONNECT 301 signature under an inherited proxy environment is covered. TCP RPC behavior, other RPC failures, and any failure after proxy normalization are not covered."
+    }
+  ],
+  "quarantine_policies": [
+    {
+      "id": "QUARANTINE-CONSENSUS-001",
+      "baseline_id": "BASE-CONSENSUS-001",
+      "classification": "explicit baseline-failure quarantine; not test deletion, modification, or successful execution",
+      "source_test": {
+        "path": "cometbft/internal/consensus/state_test.go",
+        "symbol": "TestStateFullRound1",
+        "source_revision_sha256": "c15b941a7b8b2def1e380e615716239ae29ab19b8925703224dc0979f86cfb13",
+        "must_remain_unmodified": true
+      },
+      "aggregate_command_not_used_for_conformance": "go test ./internal/consensus -count=1 -timeout=10m",
+      "remaining_suite_command": "go test ./internal/consensus -skip '^TestStateFullRound1$' -count=1 -timeout=10m",
+      "isolated_observation_command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1 -timeout=10m",
+      "requirements": [
+        "A package-scoped test discovery command must find the exact TestStateFullRound1 symbol before quarantine is applied.",
+        "The skip expression must be anchored to exactly TestStateFullRound1 and must not exclude any other test or subtest.",
+        "The remaining-suite command must exit 0 with complete output retained; no baseline disposition applies to that command.",
+        "The isolated observation must either be executed for the current target fingerprint or reused from the runner-owned exact-match evidence below while that fingerprint remains exact.",
+        "The isolated non-zero exit and KNOWN_BASELINE_FAILURE disposition must remain visible and separate from the passing remaining-suite result.",
+        "Any changed signature, additional failure, build failure, race report, missing test, modified original test, or failure in the remaining suite invalidates quarantine and remains unexplained."
+      ],
+      "reusable_current_target_observation": {
+        "target_change_fingerprint": "dca7804f3fc55036194091d3446855c0afb6532fa78781349ca8549e13ef99f1",
+        "source_revision": "d22299509a50140b74d81b113c4d78e4cf501994",
+        "observed_command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1 -timeout=10m",
+        "observed_exit_code": 1,
+        "result": "KNOWN_BASELINE_FAILURE",
+        "additional_failures": false,
+        "log_sha256": "49051780b63b44e20402feb5a300c69d0a3500b68bb93f6495d67c7a91a255e4",
+        "log_bytes": 5071,
+        "log_lines": 73,
+        "validation_report_path": "artifacts/05-validation.json",
+        "validation_report_sha256_at_observation": "dd650e90c1a18c610ef03e4c68e81cc0460b68d35b460718a5f73f22110441f1",
+        "all_required_signature_substrings_matched": true,
+        "reuse_condition": "Reuse only when the current deterministic target-change fingerprint and source revision exactly match these values and the original test file still matches source_test.source_revision_sha256."
+      },
+      "conformance_disposition": "CMT-TEST-008 may pass when the remaining suite passes and every quarantine requirement is satisfied. The quarantined test itself remains a recorded KNOWN_BASELINE_FAILURE, never PASS."
+    }
+  ],
+  "prior_phase_observation_matches": [
+    {
+      "known_failure_id": "BASE-CONSENSUS-001",
+      "functional_report": {
+        "path": "artifacts/03-functional-report.json",
+        "sha256": "36ce0d45186141448fd8440038e232b7b406538f68fc245c21637afc13ea78ce"
+      },
+      "instrumentation_manifest": {
+        "path": "artifacts/instrumentation-manifest.json",
+        "sha256": "d724d62477da0cfeac7ae1482271cb284dd60e57cbf2fca6f4a900b77e7e1744"
+      },
+      "observed_command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1",
+      "observed_exit_code": 1,
+      "observed_test": "TestStateFullRound1",
+      "observed_timeout": "10m",
+      "observed_signature_summary": [
+        "State.GetRoundState waiting on a lock",
+        "State.addVote blocked publishing a valid-block event",
+        "event publication blocked in pubsub"
+      ],
+      "runner_disposition": "MATCH: the prior Phase 03 isolated timeout and the clean baseline reproduction have the same test, timeout, lock waiter, vote-processing publisher, and pubsub blocking relationship. Resume may reuse this match only while both artifact hashes remain exact and the target diff remains unchanged."
+    }
+  ],
+  "isolation_evidence": {
+    "instrumented_worktree_used": false,
+    "temporary_worktree_removed": true,
+    "instrumented_worktree_status_unchanged": true,
+    "instrumented_source_files_modified_by_baseline_run": []
+  },
+  "assumptions": [
+    "The Go toolchain and process environment for BASE-CONSENSUS-001 match the Phase 03 environment recorded for the instrumented run.",
+    "One clean reproduction establishes that BASE-CONSENSUS-001 exists before instrumentation; it does not estimate its occurrence probability across environments.",
+    "The paired proxy/no-proxy repetitions isolate BASE-RPC-001 to inherited proxy handling for the Unix-socket WebSocket pseudo-host; they do not authorize ignoring any other RPC failure."
+  ],
+  "unresolved_risks": [
+    "The occurrence rate of BASE-CONSENSUS-001 under other Go versions, schedulers, or machine loads has not been measured."
+  ],
+  "files_changed": [],
+  "scope_expansion_requests": []
+}

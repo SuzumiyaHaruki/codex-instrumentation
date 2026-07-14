@@ -1,0 +1,883 @@
+{
+  "schema_version": 1,
+  "artifact_type": "repository_binding",
+  "phase": "01-analyze-source",
+  "generated_at": "2026-07-14",
+  "target": {
+    "name": "cometbft",
+    "root": "/home/nitro/Desktop/codex-instrumentation/cometbft",
+    "revision": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1",
+    "go_module": "github.com/cometbft/cometbft",
+    "go_directive": "1.23.5"
+  },
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "upstream_gate": {
+    "artifact": "/home/nitro/Desktop/codex-instrumentation/artifacts/00-spec-review.json",
+    "status": "PASS",
+    "downstream_allowed": true,
+    "hashes_verified": true
+  },
+  "initial_worktree_status": {
+    "porcelain": [],
+    "clean": true
+  },
+  "status": "PASS",
+  "downstream_allowed": true,
+  "files_changed": [
+    "/home/nitro/Desktop/codex-instrumentation/artifacts/01-binding.json",
+    "/home/nitro/Desktop/codex-instrumentation/artifacts/01-analysis-notes.md"
+  ],
+  "selected_messages": [
+    {
+      "group": "consensus-state",
+      "roles": [
+        "round-state notification",
+        "valid-block notification",
+        "vote knowledge",
+        "proposal-part knowledge",
+        "vote-set majority reconciliation"
+      ],
+      "native_types": [
+        "*consensusv1.NewRoundStep",
+        "*consensusv1.NewValidBlock",
+        "*consensusv1.HasVote",
+        "*consensusv1.HasProposalBlockPart",
+        "*consensusv1.VoteSetMaj23"
+      ],
+      "type_labels": [
+        "NewRoundStep",
+        "NewValidBlock",
+        "HasVote",
+        "HasProposalBlockPart",
+        "VoteSetMaj23"
+      ],
+      "route": {
+        "name": "consensus.StateChannel",
+        "id": 32,
+        "hex": "0x20",
+        "recv_message_capacity": 1048576
+      },
+      "owner": "*internal/consensus.Reactor",
+      "wrapper": "*consensusv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "outbound_entries": [
+        "Reactor.broadcastNewRoundStepMessage -> Switch.Broadcast",
+        "Reactor.broadcastNewValidBlockMessage -> Switch.Broadcast",
+        "Reactor.broadcastHasVoteMessage -> Switch.TryBroadcast",
+        "Reactor.broadcastHasProposalBlockPartMessage -> Switch.TryBroadcast",
+        "Reactor.sendNewRoundStepMessage -> Peer.Send",
+        "Reactor.queryMaj23Routine -> Peer.TrySend"
+      ],
+      "inbound_handler": "(*internal/consensus.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_CONS_CHANNELS", "E_CONS_WRAPPER", "E_CONS_SENDS", "E_CONS_RECEIVE"]
+    },
+    {
+      "group": "consensus-data",
+      "roles": ["proposal dissemination", "proposal POL dissemination", "proposal block-part transfer"],
+      "native_types": ["*consensusv1.Proposal", "*consensusv1.ProposalPOL", "*consensusv1.BlockPart"],
+      "type_labels": ["Proposal", "ProposalPOL", "BlockPart"],
+      "route": {
+        "name": "consensus.DataChannel",
+        "id": 33,
+        "hex": "0x21",
+        "recv_message_capacity": 1048576
+      },
+      "owner": "*internal/consensus.Reactor",
+      "wrapper": "*consensusv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "outbound_entries": [
+        "Reactor.gossipDataRoutine -> PeerState.SendPartSetHasPart -> Peer.Send",
+        "Reactor.gossipDataRoutine -> PeerState.SendProposalSetHasProposal -> Peer.Send"
+      ],
+      "inbound_handler": "(*internal/consensus.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_CONS_CHANNELS", "E_CONS_WRAPPER", "E_CONS_GOSSIP", "E_CONS_PEER_SENDS", "E_CONS_RECEIVE"]
+    },
+    {
+      "group": "consensus-vote",
+      "roles": ["Prevote including nil vote", "Precommit including nil vote"],
+      "native_types": ["*consensusv1.Vote"],
+      "type_labels": ["Vote"],
+      "route": {
+        "name": "consensus.VoteChannel",
+        "id": 34,
+        "hex": "0x22",
+        "recv_message_capacity": 1048576
+      },
+      "owner": "*internal/consensus.Reactor",
+      "wrapper": "*consensusv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "role_discriminator": "Vote.Vote.Type is types.PrevoteType or types.PrecommitType; nil refers to the signed vote BlockID, not a separate native message type",
+      "outbound_entries": ["Reactor.gossipVotesRoutine -> PeerState.sendVoteSetHasVote -> Peer.Send"],
+      "inbound_handler": "(*internal/consensus.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_CONS_CHANNELS", "E_CONS_WRAPPER", "E_CONS_GOSSIP", "E_CONS_PEER_SENDS", "E_CONS_RECEIVE"]
+    },
+    {
+      "group": "consensus-vote-set-bits",
+      "roles": ["vote-set reconciliation response"],
+      "native_types": ["*consensusv1.VoteSetBits"],
+      "type_labels": ["VoteSetBits"],
+      "route": {
+        "name": "consensus.VoteSetBitsChannel",
+        "id": 35,
+        "hex": "0x23",
+        "recv_message_capacity": 1048576
+      },
+      "owner": "*internal/consensus.Reactor",
+      "wrapper": "*consensusv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "outbound_entries": ["Consensus Reactor VoteSetMaj23 receive reply -> Envelope.Src.TrySend"],
+      "inbound_handler": "(*internal/consensus.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_CONS_CHANNELS", "E_CONS_WRAPPER", "E_CONS_REPLY", "E_CONS_RECEIVE"]
+    },
+    {
+      "group": "state-sync-snapshot",
+      "roles": ["snapshot discovery request", "snapshot advertisement response"],
+      "native_types": ["*statesyncv1.SnapshotsRequest", "*statesyncv1.SnapshotsResponse"],
+      "type_labels": ["SnapshotsRequest", "SnapshotsResponse"],
+      "route": {
+        "name": "statesync.SnapshotChannel",
+        "id": 96,
+        "hex": "0x60",
+        "recv_message_capacity": 4000000
+      },
+      "owner": "*statesync.Reactor",
+      "wrapper": "*statesyncv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "outbound_entries": [
+        "Reactor.Sync retry hook -> Switch.Broadcast",
+        "syncer.AddPeer -> Peer.Send",
+        "Reactor.Receive SnapshotsRequest reply -> Envelope.Src.Send"
+      ],
+      "inbound_handler": "(*statesync.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_SS_CHANNELS", "E_SS_WRAPPER", "E_SS_RECEIVE_SENDS", "E_SS_RETRIES"]
+    },
+    {
+      "group": "state-sync-chunk",
+      "roles": ["snapshot chunk request", "snapshot chunk response"],
+      "native_types": ["*statesyncv1.ChunkRequest", "*statesyncv1.ChunkResponse"],
+      "type_labels": ["ChunkRequest", "ChunkResponse"],
+      "route": {
+        "name": "statesync.ChunkChannel",
+        "id": 97,
+        "hex": "0x61",
+        "recv_message_capacity": 16000000
+      },
+      "owner": "*statesync.Reactor",
+      "wrapper": "*statesyncv1.Message",
+      "codec": "github.com/cosmos/gogoproto/proto",
+      "outbound_entries": [
+        "syncer.requestChunk retry loop -> Peer.Send",
+        "Reactor.Receive ChunkRequest reply -> Envelope.Src.Send"
+      ],
+      "inbound_handler": "(*statesync.Reactor).Receive",
+      "selected": true,
+      "evidence": ["E_SS_CHANNELS", "E_SS_WRAPPER", "E_SS_RECEIVE_SENDS", "E_SS_RETRIES"]
+    }
+  ],
+  "excluded_messages": [
+    {
+      "group": "mempool-transaction-propagation",
+      "roles": ["transaction gossip"],
+      "native_types": ["*mempoolv1.Txs"],
+      "route": {"name": "mempool.MempoolChannel", "id": 48, "hex": "0x30"},
+      "owner": "*mempool.Reactor",
+      "wrapper": "*mempoolv1.Message",
+      "reason": "exclusively transaction propagation; route is distinct from all selected routes",
+      "evidence": ["E_MEMPOOL_EXCLUDED"]
+    },
+    {
+      "group": "evidence-propagation",
+      "roles": ["evidence gossip"],
+      "native_types": ["*typesv1.EvidenceList"],
+      "route": {"name": "evidence.EvidenceChannel", "id": 56, "hex": "0x38"},
+      "owner": "*internal/evidence.Reactor",
+      "wrapper": null,
+      "reason": "exclusively Evidence Reactor traffic; route is distinct from all selected routes",
+      "evidence": ["E_EVIDENCE_EXCLUDED"]
+    },
+    {
+      "group": "block-synchronization",
+      "roles": ["block request/response", "no-block response", "status request/response"],
+      "native_types": [
+        "*blocksyncv1.BlockRequest",
+        "*blocksyncv1.BlockResponse",
+        "*blocksyncv1.NoBlockResponse",
+        "*blocksyncv1.StatusRequest",
+        "*blocksyncv1.StatusResponse"
+      ],
+      "route": {"name": "blocksync.BlocksyncChannel", "id": 64, "hex": "0x40"},
+      "owner": "*internal/blocksync.Reactor",
+      "wrapper": "*blocksyncv1.Message",
+      "reason": "exclusively block synchronization; route is distinct from all selected routes",
+      "evidence": ["E_BLOCKSYNC_EXCLUDED"]
+    },
+    {
+      "group": "peer-exchange",
+      "roles": ["peer address request", "peer address response"],
+      "native_types": ["*p2pv1.PexRequest", "*p2pv1.PexAddrs"],
+      "route": {"name": "pex.PexChannel", "id": 0, "hex": "0x00"},
+      "owner": "*p2p/pex.Reactor",
+      "wrapper": "*p2pv1.Message",
+      "reason": "exclusively peer exchange; route is distinct from all selected routes",
+      "evidence": ["E_PEX_EXCLUDED"]
+    },
+    {
+      "group": "rpc-and-application-communication",
+      "roles": ["RPC", "ABCI application communication"],
+      "native_types": [],
+      "routes": [],
+      "owner": "outside the registered P2P Reactor Channel set",
+      "wrapper": null,
+      "reason": "the production Switch registrations contain only MEMPOOL, BLOCKSYNC, CONSENSUS, EVIDENCE, STATESYNC, and optional PEX; RPC/application paths are not P2P Channels",
+      "evidence": ["E_NODE_REGISTRY"]
+    },
+    {
+      "group": "state-sync-light-and-consensus-parameter-p2p-families",
+      "roles": ["light-block request/response", "consensus-parameter request/response"],
+      "native_types": [],
+      "routes": [],
+      "owner": "not applicable in this revision",
+      "wrapper": null,
+      "reason": "State Sync registers only Snapshot and Chunk Channels, and its wrapper registry contains only SnapshotsRequest, SnapshotsResponse, ChunkRequest, and ChunkResponse",
+      "evidence": ["E_SS_CHANNELS", "E_SS_WRAPPER", "E_SS_PROTO_REGISTRY"]
+    }
+  ],
+  "outbound_binding": {
+    "covered_send_modes": [
+      {
+        "mode": "blocking peer send",
+        "entry": "p2p.Peer.Send",
+        "convergence": "(*peer).send(..., p.mconn.Send)",
+        "existing_result": "bool; false if peer stopped, route unsupported, marshal fails, or native queue cannot accept within 10 seconds",
+        "evidence": ["E_PEER_SEND", "E_MCONN_SEND"]
+      },
+      {
+        "mode": "non-blocking peer send",
+        "entry": "p2p.Peer.TrySend",
+        "convergence": "(*peer).send(..., p.mconn.TrySend)",
+        "existing_result": "bool; immediately false if stopped, unsupported, marshal fails, or queue is full",
+        "evidence": ["E_PEER_SEND", "E_MCONN_SEND"]
+      },
+      {
+        "mode": "broadcast",
+        "entry": "p2p.Switch.Broadcast",
+        "convergence": "one goroutine per current peer -> Peer.Send",
+        "existing_result": "void; per-peer bool is discarded",
+        "evidence": ["E_SWITCH_BROADCAST"]
+      },
+      {
+        "mode": "non-blocking broadcast",
+        "entry": "p2p.Switch.TryBroadcast",
+        "convergence": "one goroutine per current peer -> Peer.TrySend",
+        "existing_result": "void; per-peer bool is discarded",
+        "evidence": ["E_SWITCH_BROADCAST"]
+      },
+      {
+        "mode": "direct reply",
+        "entries": [
+          "Consensus VoteSetMaj23 receive -> Envelope.Src.TrySend(VoteSetBits)",
+          "State Sync SnapshotsRequest receive -> Envelope.Src.Send(SnapshotsResponse)",
+          "State Sync ChunkRequest receive -> Envelope.Src.Send(ChunkResponse)"
+        ],
+        "convergence": "Peer.Send or Peer.TrySend -> (*peer).send",
+        "evidence": ["E_CONS_REPLY", "E_SS_RECEIVE_SENDS"]
+      },
+      {
+        "mode": "gossip and retry",
+        "entries": [
+          "Consensus per-peer data/vote/maj23 gossip loops",
+          "State Sync repeated snapshot discovery hook",
+          "State Sync chunk timeout requester"
+        ],
+        "convergence": "Peer.Send, Peer.TrySend, Switch.Broadcast, or Switch.TryBroadcast -> (*peer).send",
+        "evidence": ["E_CONS_GOSSIP", "E_CONS_PEER_SENDS", "E_SS_RETRIES"]
+      }
+    ],
+    "selected_boundary": {
+      "kind": "binding_decision",
+      "symbol": "p2p.(*peer).send",
+      "location": "p2p/peer.go:269",
+      "reason": "narrowest shared existing boundary retaining authenticated destination Peer.ID, route, concrete native protobuf message, and the blocking/non-blocking send continuation",
+      "disabled_mode_obligation": "the existing wrap, marshal, MConnection call, bool result, and metrics path must remain byte-for-byte and behaviorally unchanged when disabled",
+      "evidence": ["E_PEER_SEND"]
+    },
+    "bypass_risks": [
+      {
+        "risk": "MConnection.Send and TrySend are lower byte-level APIs",
+        "finding": "production p2p source calls them only from (*peer).Send/TrySend via (*peer).send; they are too low for native classification",
+        "planning_constraint": "do not expose a new selected caller path directly to MConnection; focused tests must prove no direct selected send",
+        "evidence": ["E_LOWER_BYPASS_SCAN", "E_MCONN_SEND"]
+      },
+      {
+        "risk": "new or custom Peer implementations can implement the public Peer interface without (*peer).send",
+        "finding": "ordinary MultiplexTransport creates *peer for both accepted and dialed connections; custom test/mocked Peers bypass the concrete boundary",
+        "planning_constraint": "production assembly and tests must make interception ownership explicit and test custom/mocked boundary behavior where used",
+        "evidence": ["E_TRANSPORT_DIRECTIONS", "E_PEER_INTERFACE"]
+      },
+      {
+        "risk": "broadcast APIs discard per-peer results and spawn goroutines",
+        "finding": "an asynchronous failure can occur after the broadcast caller returned",
+        "planning_constraint": "accepted-work loss or controller failure must reach fatal ownership rather than silently disappear",
+        "evidence": ["E_SWITCH_BROADCAST"]
+      },
+      {
+        "risk": "selected direct P2P inbound traffic currently reaches Reactor.Receive",
+        "finding": "selected routes are exclusive in this revision and can be recognized before native dispatch",
+        "planning_constraint": "instrumentation mode must reject these routes before Reactor.Receive while disabled mode preserves the existing chain",
+        "evidence": ["E_ROUTE_EXCLUSIVITY", "E_INBOUND_CODEC"]
+      }
+    ]
+  },
+  "inbound_binding": {
+    "ordinary_receive_chain": [
+      {
+        "step": 1,
+        "existing_fact": "accepted and dialed sockets are upgraded to SecretConnection; remote signatures authenticate RemotePubKey, and the derived ID must match dialed and self-reported NodeInfo IDs",
+        "evidence": ["E_AUTH_UPGRADE"]
+      },
+      {
+        "step": 2,
+        "existing_fact": "MultiplexTransport wraps both connection directions as *peer with the same route, prototype, and Reactor maps",
+        "evidence": ["E_TRANSPORT_DIRECTIONS"]
+      },
+      {
+        "step": 3,
+        "existing_fact": "MConnection.recvRoutine validates the byte Channel, enforces Channel receive capacity while assembling packets, and invokes onReceive(channelID, msgBytes) synchronously in its receive goroutine",
+        "evidence": ["E_MCONN_RECEIVE"]
+      },
+      {
+        "step": 4,
+        "existing_fact": "createMConnection.onReceive looks up the owning Reactor and wrapper prototype by Channel, clones the prototype, decodes native bytes with gogoproto, unwraps via types.Unwrapper, records receive-byte metrics, attributes Src to the authenticated *peer, and calls Reactor.Receive(Envelope)",
+        "evidence": ["E_INBOUND_CODEC", "E_WRAPPER_CONTRACT"]
+      },
+      {
+        "step": 5,
+        "existing_fact": "panic from unknown route, decode, unwrap, or Reactor execution is recovered by MConnection and reported via onPeerError to Switch.StopPeerForError",
+        "evidence": ["E_INBOUND_CODEC", "E_MCONN_RECOVERY"]
+      },
+      {
+        "step": 6,
+        "existing_fact": "Consensus Receive converts protobuf to internal message, validates it, stops invalid peers, obtains PeerState, then updates peer state or enqueues Proposal/BlockPart/Vote work; State Sync Receive validates protobuf, stops invalid peers, and dispatches by Channel and type",
+        "evidence": ["E_CONS_RECEIVE", "E_CONS_NATIVE_CONVERSION", "E_SS_RECEIVE_SENDS", "E_SS_VALIDATION"]
+      }
+    ],
+    "route_registry": {
+      "existing_fact": "Switch.AddReactor uniquely binds Channel ID to ChannelDescriptor.MessageType and owning Reactor; duplicate route ownership panics",
+      "symbols": ["p2p.(*Switch).AddReactor", "p2p.Switch.reactorsByCh", "p2p.Switch.msgTypeByChID"],
+      "evidence": ["E_SWITCH_REGISTRY"]
+    },
+    "candidate_reinjection_entry": {
+      "kind": "binding_decision",
+      "native_entry": "owning p2p.Reactor.Receive(p2p.Envelope)",
+      "required_envelope": ["original ChannelID", "current logical Src p2p.Peer", "ordinary unwrapped concrete proto.Message"],
+      "registry_reuse": "Switch Channel -> prototype and Reactor bindings plus PeerSet.Get(p2p.ID)",
+      "reason": "this is the same existing entry reached after ordinary P2P decode/unwrap/source attribution and preserves native Reactor validation and peer-error behavior",
+      "credible_implementation_alternative": "factor the existing decode/unwrap/dispatch body behind a p2p-owned helper used by both MConnection and callback delivery; Prompt 02 must choose concrete structure",
+      "evidence": ["E_INBOUND_CODEC", "E_SWITCH_REGISTRY", "E_PEERSET"]
+    }
+  },
+  "callback_contract": {
+    "validation_before_acceptance": [
+      "HTTP method/path/content type and bounded body",
+      "complete outer JSON fields with exact capitalization",
+      "To equals local NodeKey-derived stable P2P identity",
+      "From parses as p2p.ID and resolves to a currently running authenticated Peer",
+      "adapter payload version/length and route identifier are valid",
+      "route is registered, selected, and has a local prototype and owning Reactor",
+      "native wrapped bytes are within that Channel's RecvMessageCapacity",
+      "ordinary prototype clone, protobuf decode, and unwrap succeed",
+      "decoded concrete type belongs to the selected route",
+      "revision-local pure basic semantic validation succeeds (Consensus MsgFromProto including ValidateBasic, or State Sync validateMsg) before acceptance; stateful Reactor handling remains after handoff",
+      "recomputed deterministic label matches outer Type",
+      "bounded reinjection queue accepts responsibility before returning 2xx"
+    ],
+    "queued_stable_data": [
+      "outer ID unchanged",
+      "From and To stable identity strings",
+      "Type label",
+      "adapter version",
+      "Channel ID",
+      "immutable copy of exact ordinary wrapped protobuf bytes"
+    ],
+    "dispatch_time_lookups": [
+      "re-resolve From through current Switch.PeerSet by authenticated p2p.ID and require the peer to remain current/running",
+      "re-resolve Channel prototype and owning Reactor or verify a lifecycle-frozen registry",
+      "decode and unwrap from queued exact bytes to avoid sharing a mutable proto.Message",
+      "construct p2p.Envelope with current Peer, original Channel ID, and concrete message"
+    ],
+    "acceptance_boundary": "2xx means all validation succeeded and immutable work was accepted by a bounded queue for native handoff; it does not mean Reactor.Receive returned, protocol validation succeeded, application work ran, state changed, or data persisted",
+    "post_acceptance_responsibility": "shutdown races, stale-peer discovery, registry/invariant failure, queue corruption, worker failure, or any other accepted-work loss must be visible as reinjection failure and fatal instrumentation integrity failure, never a silent drop",
+    "ordering_and_multiplicity": "one queued item per accepted callback, FIFO by callback acceptance; preserve duplicate ID and never deduplicate or restore source-send order",
+    "hazards": [
+      "Consensus Receive may block while enqueueing Proposal, BlockPart, or Vote to peerMsgQueue",
+      "native validation may synchronously call Switch.StopPeerForError and remove the source Peer",
+      "State Sync Receive can hold Reactor locks and issue blocking reply sends",
+      "shutdown can race accepted queued work",
+      "Switch Reactor maps are documented as not goroutine-safe"
+    ],
+    "evidence": ["E_CONS_RECEIVE", "E_SS_RECEIVE_SENDS", "E_SWITCH_REMOVE", "E_SWITCH_REGISTRY"]
+  },
+  "identity_and_lifecycle": {
+    "local_identity": {
+      "existing_fact": "NodeKey is persisted in config/node_key.json; NodeKey.ID is the hex public-key address and is installed in NodeInfo and Switch",
+      "use": "registration alias and outbound From",
+      "not_identity": ["validator address", "moniker", "socket address", "peer index"],
+      "evidence": ["E_NODE_KEY", "E_NODE_ASSEMBLY"]
+    },
+    "remote_identity": {
+      "existing_fact": "Peer.ID returns authenticated NodeInfo.ID; SecretConnection RemotePubKey-derived ID must match NodeInfo and, for outbound connections, the dialed ID",
+      "use": "outbound To and callback From lookup",
+      "evidence": ["E_PEER_INTERFACE", "E_AUTH_UPGRADE"]
+    },
+    "peer_lookup_and_replacement": {
+      "existing_fact": "Switch.PeerSet is a mutex-protected ID -> current Peer map with Get; duplicate live IDs are rejected",
+      "accepted_peers": "acceptRoutine authenticates, wraps, then calls addPeer",
+      "dialed_peers": "DialPeerWithAddress authenticates, wraps, then calls the same addPeer",
+      "disconnect_removal": "stopAndRemovePeer stops the peer, cleans transport and Reactor state, then removes it from PeerSet last",
+      "reconnection": "persistent reconnect creates and adds a new Peer for the same stable ID after removal",
+      "planning_constraint": "never retain a Peer pointer across asynchronous callback handoff; re-resolve the ID",
+      "evidence": ["E_PEERSET", "E_SWITCH_ADD", "E_SWITCH_REMOVE", "E_SWITCH_CONNECTIONS"]
+    },
+    "configuration": {
+      "existing_fact": "Config defaults, Viper/TOML loading, Config.ValidateBasic, and config.toml.tpl are the ordinary configuration path; existing Config.Instrumentation is specifically Prometheus metrics",
+      "required_attachment": "default-off controller mediation with controller address, callback listen/advertise address, and integer experiment node ID, validated before node construction/start",
+      "evidence": ["E_CONFIG", "E_CONFIG_LOAD", "E_METRICS_CONFIG"]
+    },
+    "construction": {
+      "existing_fact": "DefaultNewNode loads persistent NodeKey and calls NewNodeWithCliParams; that function creates native Reactors, MultiplexTransport, Switch registrations, and the Node",
+      "required_attachment": "reuse this construction path and existing transport/peer lifecycle",
+      "evidence": ["E_DEFAULT_NODE", "E_NODE_ASSEMBLY", "E_NODE_REGISTRY"]
+    },
+    "readiness_and_startup": {
+      "existing_fact": "Node.OnStart currently starts optional servers, binds P2P transport, starts Switch/Reactors, dials persistent peers, optionally starts State Sync, then starts pruning",
+      "planning_constraint": "callback bind, worker readiness, and successful controller registration must precede Switch activity that can create selected sends; readiness cannot depend on State Sync or SwitchToConsensus",
+      "evidence": ["E_NODE_START"]
+    },
+    "shutdown": {
+      "existing_fact": "Node.OnStop stops services and Switch, closes transport and listeners, and then stores; Switch.OnStop removes peers and stops Reactors",
+      "planning_constraint": "controller requests/workers/listener must be canceled and accepted work accounted for during this owner-driven shutdown, including partial startup",
+      "evidence": ["E_NODE_STOP", "E_SWITCH_LIFECYCLE", "E_SERVICE"]
+    },
+    "testnet_generation": {
+      "existing_fact": "commands.testnetFiles uses one Config to initialize per-node roots/keys and then rewrites each config by node index; hostnameOrIP already derives per-node hosts",
+      "required_attachment": "when mediation is enabled for generated nodes, assign unique integer IDs and callback addresses plus common controller address without duplicating the generator",
+      "evidence": ["E_TESTNET"]
+    },
+    "fatal_propagation": {
+      "existing_fact": "startup creation/Start errors return through Cobra RunE and main exits non-zero by panicking on Execute error; after startup RunNode blocks forever and BaseService.Quit carries no error cause while OnStop cannot return an error",
+      "planning_constraint": "runtime instrumentation fatal cause needs a typed, orderly path to Node owner/command runner so cleanup completes and RunE returns an error; deep code must not panic or os.Exit",
+      "evidence": ["E_RUNNER", "E_MAIN", "E_SERVICE"]
+    }
+  },
+  "implementation_constraints": [
+    {
+      "constraint": "Disabled mode must preserve (*peer).send's stopped-peer/channel checks, wrapper selection, exact gogoproto bytes, metrics, bool results, native 10-second Send bound, and immediate TrySend behavior.",
+      "evidence": ["E_PEER_SEND", "E_MCONN_SEND"]
+    },
+    {
+      "constraint": "Selected classification must cover exactly the ten Consensus and four State Sync concrete types on six exclusive routes; an unlabelled valid selected type or registered selected route without decoder/handler is fatal.",
+      "evidence": ["E_CONS_WRAPPER", "E_SS_WRAPPER", "E_ROUTE_EXCLUSIVITY"]
+    },
+    {
+      "constraint": "Controller adapter bytes must contain route plus the exact bytes produced after native Wrapper.Wrap and gogoproto marshal; callback must use the registered wrapper prototype, decode, and Unwrap.",
+      "evidence": ["E_PEER_SEND", "E_INBOUND_CODEC", "E_WRAPPER_CONTRACT"]
+    },
+    {
+      "constraint": "Request and decoded payload limits must respect 1 MiB Consensus, 4,000,000-byte Snapshot, and 16,000,000-byte Chunk RecvMessageCapacity values, plus bounded adapter framing/base64 overhead.",
+      "evidence": ["E_CONS_CHANNELS", "E_SS_CHANNELS", "E_CHANNEL_BOUNDS"]
+    },
+    {
+      "constraint": "Peer.Send is allowed to wait no longer than the native 10-second queue timeout; Peer.TrySend and TryBroadcast-originated work must not gain blocking lookup, lock, serialization, HTTP, or queue behavior.",
+      "evidence": ["E_MCONN_SEND", "E_SWITCH_BROADCAST"]
+    },
+    {
+      "constraint": "Broadcast has no result channel and per-peer work is already asynchronous; any success reported before controller submission completes creates fatal post-acceptance ownership on later failure.",
+      "evidence": ["E_SWITCH_BROADCAST"]
+    },
+    {
+      "constraint": "PeerSet.ForEach holds its mutex while invoking the callback, so instrumentation must not perform blocking controller or queue work while that peer-set lock is held.",
+      "evidence": ["E_PEERSET"]
+    },
+    {
+      "constraint": "Native Reactor.Receive is not a harmless callback: it may block, mutate PeerState, enqueue consensus work, send replies, or stop/remove a peer. No HTTP/queue/peer-map lock may be held across it.",
+      "evidence": ["E_CONS_RECEIVE", "E_SS_RECEIVE_SENDS"]
+    },
+    {
+      "constraint": "Switch AddReactor/RemoveReactor maps are not goroutine-safe and custom Reactors can replace standard registrations during construction; registry lifetime must be explicitly owned.",
+      "evidence": ["E_SWITCH_REGISTRY", "E_CUSTOM_REACTORS"]
+    },
+    {
+      "constraint": "Do not reuse Config.Instrumentation ambiguously: in this revision that section and type are Prometheus metrics configuration.",
+      "evidence": ["E_METRICS_CONFIG"]
+    },
+    {
+      "constraint": "The standard library net/http and encoding/json are sufficient and already used by Node servers; no production web-framework dependency is needed.",
+      "evidence": ["E_NODE_START"]
+    }
+  ],
+  "candidate_surface": [
+    {
+      "existing_file": "p2p/peer.go",
+      "existing_symbols": ["Peer", "(*peer).Send", "(*peer).TrySend", "(*peer).send", "createMConnection"],
+      "likely_role": "shared outbound interception and ordinary codec/native-dispatch reuse",
+      "clauses": ["CORE-INT-002", "CORE-SEND-001", "CORE-SEND-002", "CMT-INTEGRATION-001", "CMT-ADAPTER-006", "CMT-ADAPTER-007"]
+    },
+    {
+      "existing_file": "p2p/switch.go",
+      "existing_symbols": ["Switch", "AddReactor", "Peers", "Broadcast", "TryBroadcast", "addPeer", "stopAndRemovePeer"],
+      "likely_role": "route registry, current authenticated peer lookup, lifecycle, direct-inbound gate",
+      "clauses": ["CORE-RECV-003", "CORE-LIFE-007", "CMT-INTEGRATION-003", "CMT-ADAPTER-010", "CMT-SELECT-006"]
+    },
+    {
+      "existing_file": "p2p/metrics.go",
+      "existing_symbols": ["Metrics", "peerPendingMetricsCache"],
+      "likely_role": "instrumentation diagnostics/metrics attachment without Consensus state mutation",
+      "clauses": ["CORE-RECV-010", "CMT-INTEGRATION-009"]
+    },
+    {
+      "existing_file": "config/config.go",
+      "existing_symbols": ["Config", "DefaultConfig", "TestConfig", "(*Config).ValidateBasic", "InstrumentationConfig"],
+      "likely_role": "default-off configuration and early validation while preserving metrics config",
+      "clauses": ["CORE-MODE-001", "CMT-LIFE-001", "CMT-LIFE-002"]
+    },
+    {
+      "existing_file": "config/config.toml.tpl",
+      "existing_symbols": ["default TOML template"],
+      "likely_role": "ordinary generated configuration exposure",
+      "clauses": ["CMT-LIFE-001", "CMT-LIFE-002"]
+    },
+    {
+      "existing_file": "node/node.go",
+      "existing_symbols": ["Node", "NewNodeWithCliParams", "(*Node).OnStart", "(*Node).OnStop"],
+      "likely_role": "assembly, readiness order, shutdown ownership, runtime fatal propagation",
+      "clauses": ["CORE-LIFE-001", "CORE-ERR-008", "CMT-LIFE-003", "CMT-LIFE-005", "CMT-LIFE-006"]
+    },
+    {
+      "existing_file": "node/setup.go",
+      "existing_symbols": ["DefaultNewNode", "createSwitch"],
+      "likely_role": "ordinary constructor and Reactor/Switch registration attachment",
+      "clauses": ["CMT-INTEGRATION-004", "CMT-LIFE-003"]
+    },
+    {
+      "existing_file": "cmd/cometbft/commands/run_node.go",
+      "existing_symbols": ["NewRunNodeCmd"],
+      "likely_role": "owning command's orderly non-zero runtime fatal result",
+      "clauses": ["CORE-ERR-008", "CMT-ERROR-005"]
+    },
+    {
+      "existing_file": "cmd/cometbft/commands/testnet.go",
+      "existing_symbols": ["testnetFiles", "hostnameOrIP"],
+      "likely_role": "unique generated callback address and experiment ID",
+      "clauses": ["CMT-LIFE-004"]
+    }
+  ],
+  "test_anchors": [
+    {
+      "file": "p2p/peer_test.go",
+      "symbols": ["TestPeerSend"],
+      "use": "native blocking/TrySend convergence, wrapper bytes, bool behavior"
+    },
+    {
+      "file": "p2p/switch_test.go",
+      "symbols": ["TestSwitches", "TestSwitchStopPeerForError", "TestSwitchReconnectsToOutboundPersistentPeer", "TestSwitchReconnectsToInboundPersistentPeer", "TestSwitchAcceptRoutine", "TestSwitchInitPeerIsNotCalledBeforeRemovePeer"],
+      "use": "broadcast, both connection directions, peer removal/replacement, source lookup lifecycle"
+    },
+    {
+      "file": "internal/consensus/msgs_test.go",
+      "symbols": ["TestMsgToProto", "TestConsMsgsVectors"],
+      "use": "all Consensus concrete types, wrapper/codec vectors"
+    },
+    {
+      "file": "internal/consensus/reactor_test.go",
+      "symbols": ["TestReactorBasic", "TestNewRoundStepMessageValidateBasic", "TestVoteMessageValidateBasic", "TestVoteSetBitsMessageValidateBasic"],
+      "use": "native receive validation and selected role coverage"
+    },
+    {
+      "file": "statesync/messages_test.go",
+      "symbols": ["TestValidateMsg", "TestStateSyncVectors"],
+      "use": "all State Sync concrete types, bounds and wrapper/codec vectors"
+    },
+    {
+      "file": "statesync/reactor_test.go",
+      "symbols": ["TestReactor_Receive_ChunkRequest", "TestReactor_Receive_SnapshotsRequest"],
+      "use": "native State Sync receive, replies, source peer"
+    },
+    {
+      "file": "config/config_test.go",
+      "symbols": ["TestDefaultConfig", "TestConfigValidateBasic"],
+      "use": "default-off and enabled configuration validation"
+    },
+    {
+      "file": "node/node_test.go",
+      "symbols": ["TestNodeStartStop", "TestNodeDelayedStart", "TestNodeNewNodeCustomReactors"],
+      "use": "startup/shutdown/partial startup and registry construction"
+    }
+  ],
+  "verification_commands": [
+    "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1",
+    "go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1",
+    "go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1",
+    "go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1",
+    "go test -race ./p2p ./internal/consensus ./statesync ./config ./node ./cmd/cometbft/commands",
+    "go test ./p2p ./internal/consensus ./statesync ./config ./node ./cmd/cometbft/commands",
+    "golangci-lint run ./p2p/... ./internal/consensus/... ./statesync/... ./config/... ./node/... ./cmd/cometbft/commands/..."
+  ],
+  "verification_results": [
+    {
+      "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1",
+      "result": "PASS: ok github.com/cometbft/cometbft/p2p 0.673s"
+    },
+    {
+      "command": "go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1",
+      "result": "PASS: ok github.com/cometbft/cometbft/internal/consensus 0.041s"
+    },
+    {
+      "command": "go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1",
+      "result": "PASS: ok github.com/cometbft/cometbft/statesync 0.547s"
+    },
+    {
+      "command": "go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1",
+      "result": "PASS: ok github.com/cometbft/cometbft/config 0.028s"
+    }
+  ],
+  "evidence": {
+    "E_CONS_CHANNELS": "internal/consensus/reactor.go:26,154",
+    "E_CONS_WRAPPER": "api/cometbft/consensus/v1/message.go:9",
+    "E_CONS_SENDS": "internal/consensus/reactor.go:416",
+    "E_CONS_GOSSIP": "internal/consensus/reactor.go:590",
+    "E_CONS_PEER_SENDS": "internal/consensus/reactor.go:1210",
+    "E_CONS_REPLY": "internal/consensus/reactor.go:300",
+    "E_CONS_RECEIVE": "internal/consensus/reactor.go:236",
+    "E_CONS_NATIVE_CONVERSION": "internal/consensus/msgs.go:128",
+    "E_SS_CHANNELS": "statesync/reactor.go:21,65",
+    "E_SS_WRAPPER": "api/cometbft/statesync/v1/message.go:9",
+    "E_SS_PROTO_REGISTRY": "api/cometbft/statesync/v1/types.pb.go:392",
+    "E_SS_RECEIVE_SENDS": "statesync/reactor.go:108",
+    "E_SS_RETRIES": "statesync/reactor.go:264; statesync/syncer.go:124,440",
+    "E_SS_VALIDATION": "statesync/messages.go:12",
+    "E_PEER_INTERFACE": "p2p/peer.go:24",
+    "E_PEER_SEND": "p2p/peer.go:253",
+    "E_INBOUND_CODEC": "p2p/peer.go:402",
+    "E_WRAPPER_CONTRACT": "types/wrapper.go:7",
+    "E_MCONN_SEND": "p2p/conn/connection.go:357,812",
+    "E_MCONN_RECEIVE": "p2p/conn/connection.go:586",
+    "E_MCONN_RECOVERY": "p2p/conn/connection.go:340",
+    "E_CHANNEL_BOUNDS": "p2p/conn/connection.go:748,898",
+    "E_SWITCH_REGISTRY": "p2p/switch.go:161",
+    "E_SWITCH_BROADCAST": "p2p/switch.go:265",
+    "E_SWITCH_ADD": "p2p/switch.go:799",
+    "E_SWITCH_REMOVE": "p2p/switch.go:319,354",
+    "E_SWITCH_CONNECTIONS": "p2p/switch.go:540,626,719",
+    "E_SWITCH_LIFECYCLE": "p2p/switch.go:230",
+    "E_PEERSET": "p2p/peer_set.go:10,30,50,95,108,163",
+    "E_AUTH_UPGRADE": "p2p/transport.go:410; p2p/conn/secret_connection.go:181",
+    "E_TRANSPORT_DIRECTIONS": "p2p/transport.go:193,211,499",
+    "E_NODE_KEY": "p2p/key.go:15,26,32,48",
+    "E_NODE_ASSEMBLY": "node/node.go:303,491",
+    "E_NODE_REGISTRY": "node/setup.go:466",
+    "E_CUSTOM_REACTORS": "node/node.go:96",
+    "E_CONFIG": "config/config.go:77,95,112,139",
+    "E_CONFIG_LOAD": "cmd/cometbft/commands/root.go:29",
+    "E_METRICS_CONFIG": "config/config.go:1426",
+    "E_DEFAULT_NODE": "node/setup.go:93",
+    "E_NODE_START": "node/node.go:578",
+    "E_NODE_STOP": "node/node.go:651",
+    "E_SERVICE": "libs/service/service.go:25,99,129,167,230",
+    "E_RUNNER": "cmd/cometbft/commands/run_node.go:95",
+    "E_MAIN": "cmd/cometbft/main.go:14",
+    "E_TESTNET": "cmd/cometbft/commands/testnet.go:97,121,159,211,229",
+    "E_MEMPOOL_EXCLUDED": "mempool/mempool.go:14; mempool/reactor.go:72; api/cometbft/mempool/v1/message.go:9",
+    "E_EVIDENCE_EXCLUDED": "internal/evidence/reactor.go:16,52",
+    "E_BLOCKSYNC_EXCLUDED": "internal/blocksync/reactor.go:18,173; api/cometbft/blocksync/v1/message.go:14",
+    "E_PEX_EXCLUDED": "p2p/pex/pex_reactor.go:20,185; api/cometbft/p2p/v1/pex.go:9",
+    "E_ROUTE_EXCLUSIVITY": "p2p/switch.go:163; node/setup.go:486",
+    "E_LOWER_BYPASS_SCAN": "p2p/peer.go:257,265; p2p/conn/connection.go:358,387"
+  },
+  "files_read": [
+    "/home/nitro/Desktop/codex-instrumentation/AGENTS.md",
+    "/home/nitro/Desktop/codex-instrumentation/prompts/01-analyze-source.md",
+    "/home/nitro/Desktop/codex-instrumentation/spec/core.md",
+    "/home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md",
+    "/home/nitro/Desktop/codex-instrumentation/artifacts/00-spec-review.json",
+    "cometbft/go.mod",
+    "cometbft/go.work",
+    "cometbft/api/go.mod",
+    "cometbft/Makefile",
+    "cometbft/tests.mk",
+    "cometbft/.golangci.yml",
+    "cometbft/types/wrapper.go",
+    "cometbft/p2p/types.go",
+    "cometbft/p2p/key.go",
+    "cometbft/p2p/node_info.go",
+    "cometbft/p2p/peer.go",
+    "cometbft/p2p/peer_set.go",
+    "cometbft/p2p/switch.go",
+    "cometbft/p2p/transport.go",
+    "cometbft/p2p/metrics.go",
+    "cometbft/p2p/conn/connection.go",
+    "cometbft/p2p/conn/secret_connection.go",
+    "cometbft/p2p/pex/pex_reactor.go",
+    "cometbft/api/cometbft/p2p/v1/pex.go",
+    "cometbft/internal/consensus/reactor.go",
+    "cometbft/internal/consensus/msgs.go",
+    "cometbft/api/cometbft/consensus/v1/message.go",
+    "cometbft/api/cometbft/consensus/v1/types.pb.go",
+    "cometbft/statesync/reactor.go",
+    "cometbft/statesync/syncer.go",
+    "cometbft/statesync/messages.go",
+    "cometbft/api/cometbft/statesync/v1/message.go",
+    "cometbft/api/cometbft/statesync/v1/types.pb.go",
+    "cometbft/mempool/mempool.go",
+    "cometbft/mempool/reactor.go",
+    "cometbft/api/cometbft/mempool/v1/message.go",
+    "cometbft/internal/blocksync/reactor.go",
+    "cometbft/api/cometbft/blocksync/v1/message.go",
+    "cometbft/internal/evidence/reactor.go",
+    "cometbft/config/config.go",
+    "cometbft/config/config.toml.tpl",
+    "cometbft/node/node.go",
+    "cometbft/node/setup.go",
+    "cometbft/libs/service/service.go",
+    "cometbft/cmd/cometbft/main.go",
+    "cometbft/cmd/cometbft/commands/root.go",
+    "cometbft/cmd/cometbft/commands/run_node.go",
+    "cometbft/cmd/cometbft/commands/testnet.go",
+    "cometbft/p2p/peer_test.go",
+    "cometbft/p2p/switch_test.go",
+    "cometbft/internal/consensus/msgs_test.go",
+    "cometbft/internal/consensus/reactor_test.go",
+    "cometbft/statesync/messages_test.go",
+    "cometbft/statesync/reactor_test.go",
+    "cometbft/config/config_test.go",
+    "cometbft/node/node_test.go",
+    "cometbft/cmd/cometbft/commands/root_test.go"
+  ],
+  "material_commands": [
+    {
+      "command": "sha256sum spec/core.md spec/target-cometbft.md",
+      "result": "PASS: both values match artifacts/00-spec-review.json"
+    },
+    {
+      "command": "git rev-parse HEAD && git status --short",
+      "result": "PASS: d22299509a50140b74d81b113c4d78e4cf501994; initial porcelain output empty"
+    },
+    {
+      "command": "rg -n \"func \\\\(.*\\\\) GetChannels\\\\(\\\\)|func \\\\(\\\\*.*\\\\) GetChannels\\\\(\\\\)\" --glob '*.go' --glob '!**/*_test.go' .",
+      "result": "PASS: production Channel owners enumerated as Consensus, State Sync, Mempool, Block Sync, Evidence, and PEX"
+    },
+    {
+      "command": "rg -n \"\\\\.Send\\\\(p2p\\\\.Envelope|\\\\.TrySend\\\\(p2p\\\\.Envelope|\\\\.Broadcast\\\\(p2p\\\\.Envelope|\\\\.TryBroadcast\\\\(p2p\\\\.Envelope\" internal/consensus statesync --glob '!**/*_test.go'",
+      "result": "PASS: selected direct, reply, broadcast, gossip, and retry call sites enumerated"
+    },
+    {
+      "command": "rg -n \"func \\\\(.*\\\\) send\\\\(|\\\\.mconn\\\\.(Send|TrySend)|MConnection\\\\).*Send|sendFunc\" p2p --glob '!**/*_test.go'",
+      "result": "PASS: ordinary production lower MConnection send calls converge only from p2p.(*peer).send"
+    },
+    {
+      "command": "rg -n \"NewMConnection|NewMConnectionWithConfig\" --glob '*.go' --glob '!**/*_test.go' .",
+      "result": "PASS: repository-wide production construction reaches NewMConnectionWithConfig only through p2p.createMConnection"
+    },
+    {
+      "command": "go list -f '{{.ImportPath}} {{.Dir}}' github.com/cometbft/cometbft/api/cometbft/consensus/v1 github.com/cometbft/cometbft/api/cometbft/statesync/v1",
+      "result": "PASS: go.work resolves both API packages to checked-out TARGET_ROOT/api"
+    },
+    {
+      "command": "go test ./p2p -run 'TestPeerSend|TestSwitches|TestSwitchStopPeerForError' -count=1 && go test ./internal/consensus -run 'TestMsgToProto|TestConsMsgsVectors|Test(NewRoundStepMessageValidateBasic|VoteMessageValidateBasic|VoteSetBitsMessageValidateBasic)' -count=1 && go test ./statesync -run 'TestValidateMsg|TestStateSyncVectors|TestReactor_Receive_(ChunkRequest|SnapshotsRequest)' -count=1 && go test ./config -run 'TestDefaultConfig|TestConfigValidateBasic' -count=1",
+      "result": "PASS: all four focused package commands exited 0"
+    },
+    {
+      "command": "python3 -m json.tool ../artifacts/01-binding.json >/dev/null",
+      "result": "PASS: artifact is valid JSON"
+    },
+    {
+      "command": "test -z \"$(git status --short)\"",
+      "result": "PASS: target source worktree remains unchanged and clean"
+    }
+  ],
+  "specification_clauses_addressed": [
+    "CORE-PROFILE-004",
+    "CORE-PROFILE-005",
+    "CORE-PROFILE-006",
+    "CORE-INT-001",
+    "CORE-INT-002",
+    "CORE-INT-006",
+    "CORE-SEND-001",
+    "CORE-SEND-002",
+    "CORE-RECV-003",
+    "CORE-RECV-004",
+    "CORE-RECV-005",
+    "CORE-RECV-006",
+    "CORE-LIFE-001",
+    "CORE-LIFE-003",
+    "CORE-LIFE-007",
+    "CORE-SEC-005",
+    "CORE-PATCH-007",
+    "CMT-ANALYSIS-001",
+    "CMT-ANALYSIS-002",
+    "CMT-ANALYSIS-003",
+    "CMT-ANALYSIS-004",
+    "CMT-ANALYSIS-005",
+    "CMT-ANALYSIS-006",
+    "CMT-ANALYSIS-007",
+    "CMT-ANALYSIS-008",
+    "CMT-ANALYSIS-009",
+    "CMT-ANALYSIS-010",
+    "CMT-SELECT-001",
+    "CMT-SELECT-002",
+    "CMT-SELECT-003",
+    "CMT-SELECT-004",
+    "CMT-SELECT-005",
+    "CMT-SELECT-006",
+    "CMT-ADAPTER-002",
+    "CMT-ADAPTER-004",
+    "CMT-ADAPTER-006",
+    "CMT-ADAPTER-007",
+    "CMT-ADAPTER-010",
+    "CMT-ADAPTER-011",
+    "CMT-ADAPTER-012",
+    "CMT-ADAPTER-015",
+    "CMT-INTEGRATION-001",
+    "CMT-INTEGRATION-003",
+    "CMT-INTEGRATION-004",
+    "CMT-INTEGRATION-006",
+    "CMT-LIFE-001",
+    "CMT-LIFE-003",
+    "CMT-LIFE-004",
+    "CMT-LIFE-005",
+    "CMT-LIFE-006",
+    "CMT-ERROR-005",
+    "CMT-TEST-001",
+    "CMT-TEST-002",
+    "CMT-TEST-003",
+    "CMT-TEST-004",
+    "CMT-TEST-005",
+    "CMT-TEST-007",
+    "CMT-TEST-008",
+    "CMT-TEST-009"
+  ],
+  "assumptions": [
+    "The ordinary production node uses MultiplexTransport and the concrete *p2p.peer created by node.NewNodeWithCliParams; custom application-supplied transports or Peer implementations require separate explicit integration if placed in scope later.",
+    "Reactor registrations are construction-time state in the ordinary node; because mutation APIs are not goroutine-safe, a later implementation must explicitly freeze or own callback lookup rather than assume runtime mutation safety.",
+    "Simple deterministic labels listed here are revision-local controller metadata; native route and exact wrapped bytes remain authoritative and the planner must test the complete mapping.",
+    "A callback queue may be the specification-defined native handoff boundary only if it is bounded, preserves FIFO acceptance order/multiplicity, and makes any accepted-work loss fatal."
+  ],
+  "unresolved_risks": [
+    "The concrete runtime fatal-error propagation structure is absent today: RunNode blocks forever after startup and BaseService.Quit has no cause. Prompt 02 must bind an orderly typed owner path without changing disabled behavior.",
+    "A safe route-registry access API or frozen snapshot does not currently exist; Prompt 02 must resolve ownership without concurrent access to non-thread-safe Switch registration maps.",
+    "The exact adapter payload framing/version and HTTP body limit remain planning decisions, constrained to route plus exact wrapped bytes and the discovered native capacities.",
+    "Broadcast APIs discard per-peer results, so asynchronous acceptance and fatal ownership require careful later synchronization design.",
+    "Native Reactor.Receive may synchronously stop the source peer or block; callback acceptance must remain a bounded handoff and later dispatch must account for peer disappearance and shutdown.",
+    "Controller HTTP timeout/retry values are not present in current source and must be chosen within the specification and existing 10-second blocking-send bound.",
+    "Existing Config.Instrumentation naming collides semantically with the experiment's generic term instrumentation; later naming must avoid breaking Prometheus configuration."
+  ],
+  "scope_expansion_requests": []
+}

@@ -1,0 +1,162 @@
+{
+  "artifact_type": "spec_review",
+  "status": "PASS",
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "findings": [
+    {
+      "kind": "consistency",
+      "clause_ids": [
+        "CORE-PROFILE-006",
+        "CORE-PROFILE-007",
+        "CMT-ADAPTER-001",
+        "CMT-ERROR-003"
+      ],
+      "summary": "The CometBFT profile binds the core identity, wire, native-delivery, and failure contracts without weakening the no-fallback or fatal-integrity requirements.",
+      "blocking": false
+    },
+    {
+      "kind": "traffic_scope",
+      "clause_ids": [
+        "CORE-INT-001",
+        "CMT-SELECT-001",
+        "CMT-SELECT-002",
+        "CMT-SELECT-003",
+        "CMT-SELECT-004",
+        "CMT-SELECT-006"
+      ],
+      "summary": "Selection is defined by Consensus and State Sync ownership with a required revision-derived inventory; excluded subsystem traffic, shared-route exceptions, outbound bypass coverage, and direct inbound rejection are explicit.",
+      "blocking": false
+    },
+    {
+      "kind": "observable_behavior",
+      "clause_ids": [
+        "CORE-SEND-003",
+        "CORE-WIRE-009",
+        "CORE-WIRE-012",
+        "CORE-RECV-010",
+        "CORE-LIFE-001",
+        "CORE-LIFE-003",
+        "CMT-ADAPTER-015"
+      ],
+      "summary": "Send acceptance, callback status, reinjection acceptance, correlation diagnostics, disabled-mode equivalence, error outcomes, startup readiness, and orderly shutdown have externally distinguishable outcomes and boundaries.",
+      "blocking": false
+    },
+    {
+      "kind": "responsibility_separation",
+      "clause_ids": [
+        "CORE-MODE-004",
+        "CORE-RECV-009",
+        "CMT-SCOPE-006",
+        "CMT-TEST-010"
+      ],
+      "summary": "Node instrumentation is limited to submission, callback validation, and native reinjection; scheduling policy, protocol-state observation, formal-model mapping, and a production controller remain out of scope.",
+      "blocking": false
+    },
+    {
+      "kind": "protocol_preservation",
+      "clause_ids": [
+        "CORE-MODE-002",
+        "CORE-MODE-003",
+        "CMT-SCOPE-003",
+        "CMT-SCOPE-004",
+        "CMT-INTEGRATION-005"
+      ],
+      "summary": "The specifications preserve disabled-mode behavior and forbid changes to consensus validity, voting, transitions, schemas, persistence, timeouts, and unrelated P2P behavior.",
+      "blocking": false
+    },
+    {
+      "kind": "testability",
+      "clause_ids": [
+        "CORE-PROFILE-008",
+        "CORE-PATCH-007",
+        "CMT-TEST-002",
+        "CMT-TEST-006",
+        "CMT-TEST-011",
+        "CMT-TEST-013"
+      ],
+      "summary": "Mandatory behavior is addressable through clause-linked source evidence, focused static and behavioral tests, acceptance traces, race checks, regression commands, and manifest consistency checks.",
+      "blocking": false
+    },
+    {
+      "kind": "deferred_source_binding",
+      "clause_ids": [
+        "CORE-PROFILE-004",
+        "CMT-PROFILE-001",
+        "CMT-ANALYSIS-008",
+        "CMT-ANALYSIS-009",
+        "CMT-ANALYSIS-010"
+      ],
+      "summary": "Revision-local files, symbols, message registrations, send and receive paths, identities, routes, codecs, lifecycle hooks, and verification commands are correctly deferred to evidence-backed repository analysis with an explicit stop-on-ambiguity rule.",
+      "blocking": false
+    }
+  ],
+  "assumptions": [
+    "RFC 2119 and RFC 8174 normative terms have their standard meanings.",
+    "Repository-analysis and implementation phases will use the exact checked-out CometBFT revision and will stop rather than guess if its bindings contradict the specifications.",
+    "Static inspection, focused tests, structured diagnostics and metrics, process exit status, and manifest validation are acceptable forms of observable conformance evidence where appropriate."
+  ],
+  "unresolved_risks": [
+    "The checked-out revision may expose inseparable shared routes or send bypasses; the mandated repository binding analysis must establish feasibility before production edits.",
+    "The checked-out revision's native API return types and lifecycle ownership may constrain how fatal errors reach the command runner while preserving disabled-mode behavior.",
+    "Exact repository-supported formatting, static-analysis, race, and regression commands remain intentionally unknown until the authorized source-analysis phase."
+  ],
+  "files_read": [
+    "/home/nitro/Desktop/codex-instrumentation/AGENTS.md",
+    "/home/nitro/Desktop/codex-instrumentation/prompts/00-review-spec.md",
+    "/home/nitro/Desktop/codex-instrumentation/spec/core.md",
+    "/home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md"
+  ],
+  "files_changed": [
+    "/home/nitro/Desktop/codex-instrumentation/artifacts/00-spec-review.json"
+  ],
+  "commands": [
+    {
+      "command": "sed -n '1,240p' prompts/00-review-spec.md",
+      "result": "PASS: phase scope and output contract read"
+    },
+    {
+      "command": "sed -n '1,260p' /home/nitro/Desktop/codex-instrumentation/AGENTS.md",
+      "result": "PASS: workspace instructions read"
+    },
+    {
+      "command": "sed -n '1,360p' /home/nitro/Desktop/codex-instrumentation/spec/core.md",
+      "result": "PASS: initial core specification read; tool display was truncated, so explicit bounded follow-up reads were used"
+    },
+    {
+      "command": "sed -n '1,360p' /home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md",
+      "result": "PASS: initial target specification read; tool display was truncated, so explicit bounded follow-up reads were used"
+    },
+    {
+      "command": "sha256sum /home/nitro/Desktop/codex-instrumentation/spec/core.md /home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md",
+      "result": "PASS: fingerprints recorded"
+    },
+    {
+      "command": "sed -n '180,520p' /home/nitro/Desktop/codex-instrumentation/spec/core.md",
+      "result": "PASS: remaining core clauses read"
+    },
+    {
+      "command": "sed -n '1,220p' /home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md",
+      "result": "PASS: complete target specification read"
+    },
+    {
+      "command": "sed -n '221,520p' /home/nitro/Desktop/codex-instrumentation/spec/target-cometbft.md",
+      "result": "PASS: confirmed no additional target content"
+    },
+    {
+      "command": "sed -n '1,119p' /home/nitro/Desktop/codex-instrumentation/spec/core.md",
+      "result": "PASS: core opening clauses re-read without truncation"
+    },
+    {
+      "command": "sed -n '120,199p' /home/nitro/Desktop/codex-instrumentation/spec/core.md",
+      "result": "PASS: core error and wire clauses re-read without truncation"
+    },
+    {
+      "command": "python3 -m json.tool /home/nitro/Desktop/codex-instrumentation/artifacts/00-spec-review.json >/dev/null",
+      "result": "PASS: exit 0; artifact syntax valid (executed again after recording this result)"
+    }
+  ],
+  "downstream_allowed": true
+}

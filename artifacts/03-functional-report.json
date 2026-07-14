@@ -1,0 +1,228 @@
+{
+  "artifact_type": "functional_report",
+  "status": "PASS",
+  "downstream_allowed": true,
+  "phase_mode": "resume",
+  "initial_target_change_fingerprint": "5f62d9cdb18fde31b6f6fbd801c7d24256ffdc2285fa2600eadd9723fe5b7659",
+  "final_target_change_fingerprint": "5f62d9cdb18fde31b6f6fbd801c7d24256ffdc2285fa2600eadd9723fe5b7659",
+  "validated_baseline_evidence": {
+    "path": "artifacts/baseline-report.json",
+    "artifact_type": "baseline_report",
+    "source_revision": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "known_failure_id": "BASE-CONSENSUS-001",
+    "classification": "pre-instrumentation baseline timeout",
+    "matched_test": "TestStateFullRound1",
+    "matched_exit_code": 1,
+    "matched_timeout": "10m0s",
+    "matched_blocking_relationship": "TestStateFullRound1 waits for State.GetRoundState read locking while State.addVote is blocked publishing a valid-block event through pubsub",
+    "prior_functional_report_sha256": "36ce0d45186141448fd8440038e232b7b406538f68fc245c21637afc13ea78ce",
+    "prior_manifest_sha256": "d724d62477da0cfeac7ae1482271cb284dd60e57cbf2fca6f4a900b77e7e1744",
+    "disposition": "KNOWN_BASELINE_FAILURE",
+    "rerun": false
+  },
+  "spec_fingerprint": {
+    "core_sha256": "c55814f46414d2dbb9a90972fc3b7ca2c3a430f79ae807aaf486c3e04ed6dff8",
+    "target_sha256": "88757c2ff6cdd182f846324ab6114ba575b5f714e3930201abeaeb90834413b9"
+  },
+  "source_revision": {
+    "commit": "d22299509a50140b74d81b113c4d78e4cf501994",
+    "describe": "v1.0.1"
+  },
+  "files_read": [
+    "AGENTS.md",
+    "prompts/03-generate-functional.md",
+    "spec/core.md",
+    "spec/target-cometbft.md",
+    "artifacts/00-spec-review.json",
+    "artifacts/01-binding.json",
+    "artifacts/01-analysis-notes.md",
+    "artifacts/02-patch-plan.json",
+    "artifacts/02-patch-plan.md",
+    "artifacts/baseline-report.json",
+    "artifacts/03-functional-report.json",
+    "artifacts/instrumentation-manifest.json",
+    "cometbft/config/config.go",
+    "cometbft/config/config.toml.tpl",
+    "cometbft/config/config_test.go",
+    "cometbft/p2p/peer.go",
+    "cometbft/p2p/peer_test.go",
+    "cometbft/p2p/switch.go",
+    "cometbft/p2p/switch_test.go",
+    "cometbft/p2p/peer_set.go",
+    "cometbft/p2p/transport.go",
+    "cometbft/p2p/types.go",
+    "cometbft/p2p/key.go",
+    "cometbft/p2p/metrics.go",
+    "cometbft/p2p/metrics.gen.go",
+    "cometbft/p2p/conn/connection.go",
+    "cometbft/types/wrapper.go",
+    "cometbft/node/node.go",
+    "cometbft/node/setup.go",
+    "cometbft/node/node_test.go",
+    "cometbft/libs/service/service.go",
+    "cometbft/internal/consensus/msgs.go",
+    "cometbft/internal/consensus/reactor.go",
+    "cometbft/statesync/messages.go",
+    "cometbft/statesync/reactor.go",
+    "cometbft/api/cometbft/consensus/v1/message.go",
+    "cometbft/api/cometbft/statesync/v1/message.go",
+    "cometbft/cmd/cometbft/commands/run_node.go",
+    "cometbft/cmd/cometbft/commands/testnet.go",
+    "cometbft/cmd/cometbft/commands/root_test.go",
+    "cometbft/internal/os/os.go",
+    "cometbft/cmd/cometbft/main.go",
+    "cometbft/cmd/cometbft/commands/controller_mediation_test.go",
+    "cometbft/config/controller_mediation_test.go",
+    "cometbft/node/controller_mediation.go",
+    "cometbft/node/controller_mediation_test.go",
+    "cometbft/p2p/controller_mediation.go",
+    "cometbft/p2p/controller_mediation_test.go",
+    "cometbft/statesync/validation_export.go"
+  ],
+  "files_changed": [
+    "cometbft/cmd/cometbft/commands/controller_mediation_test.go",
+    "cometbft/cmd/cometbft/commands/run_node.go",
+    "cometbft/cmd/cometbft/commands/testnet.go",
+    "cometbft/config/config.go",
+    "cometbft/config/config.toml.tpl",
+    "cometbft/config/controller_mediation_test.go",
+    "cometbft/node/controller_mediation.go",
+    "cometbft/node/controller_mediation_test.go",
+    "cometbft/node/node.go",
+    "cometbft/p2p/controller_mediation.go",
+    "cometbft/p2p/controller_mediation_test.go",
+    "cometbft/p2p/metrics.gen.go",
+    "cometbft/p2p/metrics.go",
+    "cometbft/p2p/peer.go",
+    "cometbft/p2p/switch.go",
+    "cometbft/p2p/transport.go",
+    "cometbft/statesync/validation_export.go"
+  ],
+  "symbols_changed": {
+    "cometbft/config/config.go": ["Config", "DefaultConfig", "TestConfig", "(*Config).ValidateBasic", "ControllerMediationConfig", "DefaultControllerMediationConfig", "(*ControllerMediationConfig).ValidateBasic"],
+    "cometbft/p2p/controller_mediation.go": ["SendMode", "MediatedMessageSink", "NativeRoute", "NativeRouteRegistry", "(*NativeRouteRegistry).Routes", "(*NativeRouteRegistry).ReceiveCapacity", "(*NativeRouteRegistry).Decode", "(*NativeRouteRegistry).Dispatch", "PeerMediationSink"],
+    "cometbft/p2p/peer.go": ["peer", "newPeer", "(*peer).Send", "(*peer).TrySend", "(*peer).send", "createMConnection"],
+    "cometbft/p2p/switch.go": ["Switch", "(*Switch).SetMediatedMessageSink", "(*Switch).FreezeNativeRoutes", "(*Switch).acceptRoutine", "(*Switch).addOutboundPeerWithConfig"],
+    "cometbft/p2p/transport.go": ["peerConfig", "(*MultiplexTransport).wrapPeer"],
+    "cometbft/p2p/metrics.go": ["Metrics.ControllerMediationTotal"],
+    "cometbft/p2p/metrics.gen.go": ["PrometheusMetrics", "NopMetrics"],
+    "cometbft/node/controller_mediation.go": ["controllerMediation", "controllerMessage", "adapterPayload", "mediationFatalError", "newControllerMediation", "(*controllerMediation).Start", "(*controllerMediation).Stop", "(*controllerMediation).Selected", "(*controllerMediation).Submit", "(*controllerMediation).serveMessage", "(*controllerMediation).submissionWorker", "(*controllerMediation).reinjectionWorker", "encodeAdapterPayload", "decodeAdapterPayload", "selectedMessageBinding", "validateSelectedMessage"],
+    "cometbft/node/node.go": ["Node", "NewNodeWithCliParams", "(*Node).OnStart", "(*Node).OnStop", "(*Node).ControllerMediationEnabled", "(*Node).FatalError", "(*Node).recordControllerFatal"],
+    "cometbft/statesync/validation_export.go": ["ValidateMessage"],
+    "cometbft/cmd/cometbft/commands/run_node.go": ["NewRunNodeCmd", "controllerMediationNode", "waitForControllerMediationNode"],
+    "cometbft/cmd/cometbft/commands/testnet.go": ["testnetFiles", "configureControllerMediationForTestnet"],
+    "focused_tests": ["TestControllerMediationConfigDefaults", "TestControllerMediationConfigValidation", "TestControllerMediationSelectedSend", "TestControllerMediationDirectInboundGate", "TestControllerMediationRouteRegistry", "TestControllerMediationAdapterInventoryRoundTrip", "TestControllerMediationCallbackOrderAndDuplication", "TestControllerMediationCallbackRejections", "TestControllerMediationNoForwardNoReceive", "TestControllerMediationBoundsAndFailures", "TestControllerMediationLifecycle", "TestControllerMediationConcurrentIDs", "TestControllerMediationRuntimeFatalExit", "TestControllerMediationTestnetConfig"]
+  },
+  "clauses_implemented": [
+    {
+      "plan_step": "F1",
+      "clauses": ["CORE-MODE-001", "CORE-MODE-002", "CORE-LIFE-001", "CORE-LIFE-002", "CMT-LIFE-001", "CMT-LIFE-002"],
+      "evidence": ["cometbft/config/config.go:1490", "cometbft/config/config.toml.tpl", "cometbft/config/controller_mediation_test.go"]
+    },
+    {
+      "plan_step": "F2",
+      "clauses": ["CORE-INT-002", "CORE-INT-003", "CORE-INT-004", "CORE-INT-006", "CORE-INT-007", "CORE-SEND-001", "CORE-SEND-002", "CORE-RECV-004", "CORE-RECV-005", "CORE-RECV-006", "CORE-PATCH-002", "CMT-SELECT-005", "CMT-SELECT-006", "CMT-ADAPTER-006", "CMT-ADAPTER-007", "CMT-INTEGRATION-001", "CMT-INTEGRATION-002", "CMT-INTEGRATION-003", "CMT-INTEGRATION-009"],
+      "evidence": ["cometbft/p2p/peer.go:258", "cometbft/p2p/controller_mediation.go", "cometbft/p2p/switch.go:161", "cometbft/p2p/controller_mediation_test.go"]
+    },
+    {
+      "plan_step": "F3",
+      "clauses": ["CORE-INT-001", "CORE-INT-005", "CORE-SEND-003", "CORE-SEND-004", "CORE-SEND-005", "CORE-ERR-001", "CORE-ERR-002", "CORE-ERR-003", "CORE-ERR-004", "CORE-ERR-005", "CORE-ERR-006", "CORE-ERR-007", "CORE-REG-001", "CORE-REG-002", "CORE-REG-003", "CORE-REG-004", "CORE-REG-005", "CORE-REG-006", "CORE-REG-007", "CORE-REG-008", "CORE-WIRE-001", "CORE-WIRE-002", "CORE-WIRE-003", "CORE-WIRE-004", "CORE-WIRE-005", "CORE-WIRE-006", "CORE-WIRE-007", "CORE-WIRE-008", "CORE-WIRE-009", "CORE-WIRE-010", "CORE-WIRE-011", "CORE-WIRE-012", "CORE-RECV-001", "CORE-RECV-002", "CORE-RECV-003", "CORE-RECV-007", "CORE-RECV-008", "CORE-RECV-009", "CORE-RECV-010", "CORE-LIFE-001", "CORE-LIFE-002", "CORE-LIFE-003", "CORE-LIFE-004", "CORE-LIFE-005", "CORE-LIFE-006", "CORE-LIFE-007", "CORE-SEC-001", "CORE-SEC-002", "CORE-SEC-003", "CORE-SEC-004", "CORE-SEC-005", "CMT-ADAPTER-001", "CMT-ADAPTER-002", "CMT-ADAPTER-003", "CMT-ADAPTER-004", "CMT-ADAPTER-005", "CMT-ADAPTER-008", "CMT-ADAPTER-009", "CMT-ADAPTER-010", "CMT-ADAPTER-011", "CMT-ADAPTER-012", "CMT-ADAPTER-013", "CMT-ADAPTER-014", "CMT-ADAPTER-015", "CMT-INTEGRATION-004", "CMT-INTEGRATION-005", "CMT-INTEGRATION-006", "CMT-INTEGRATION-007", "CMT-INTEGRATION-008", "CMT-LIFE-003", "CMT-LIFE-005", "CMT-LIFE-006", "CMT-LIFE-007", "CMT-ERROR-001", "CMT-ERROR-002", "CMT-ERROR-003", "CMT-ERROR-004"],
+      "evidence": ["cometbft/node/controller_mediation.go", "cometbft/node/node.go:585", "cometbft/statesync/validation_export.go", "cometbft/node/controller_mediation_test.go"]
+    },
+    {
+      "plan_step": "F4",
+      "clauses": ["CORE-ERR-008", "CORE-MODE-002", "CMT-LIFE-004", "CMT-ERROR-005"],
+      "evidence": ["cometbft/cmd/cometbft/commands/run_node.go:100", "cometbft/cmd/cometbft/commands/testnet.go:232", "cometbft/cmd/cometbft/commands/controller_mediation_test.go"]
+    },
+    {
+      "plan_step": "F5",
+      "clauses": ["CORE-PROFILE-009", "CORE-PATCH-001", "CORE-PATCH-003", "CORE-PATCH-004", "CORE-PATCH-005", "CORE-PATCH-006", "CORE-PATCH-007", "CORE-PATCH-008", "CORE-PATCH-009", "CMT-TEST-001", "CMT-TEST-002", "CMT-TEST-003", "CMT-TEST-004", "CMT-TEST-005", "CMT-TEST-006", "CMT-TEST-009", "CMT-TEST-010", "CMT-TEST-011", "CMT-TEST-012", "CMT-TEST-013"],
+      "completion": "complete: every planned command succeeded or exactly matched validated baseline failure BASE-CONSENSUS-001; affected instrumentation behavior is independently covered by focused tests"
+    }
+  ],
+  "clauses_incomplete": [],
+  "clauses_deferred_to_refinement": [
+    {
+      "owner": "R1",
+      "item": "Prove TrySend admission does not become a semantic wait under contention.",
+      "reason": "Explicit residual risk assigned to R1 by Prompt 02; functional admission remains bounded and non-networking."
+    },
+    {
+      "owner": "R1",
+      "item": "Harden shutdown around a Reactor.Receive that blocks longer than shutdown_timeout.",
+      "reason": "Explicit blocking-native-handler residual risk assigned to R1."
+    },
+    {
+      "owner": "R2",
+      "item": "Run the planned race, vet, lint, and final regression evidence.",
+      "reason": "Prompt 02 assigns these exact commands to refinement; they were not substituted for functional checks."
+    }
+  ],
+  "design_deviations": [
+    {
+      "planned": "A named (*Node).waitControllerFatal helper.",
+      "actual": "controllerMediation reports the first typed fatal through (*Node).recordControllerFatal, which asynchronously invokes the existing BaseService Stop path; the enabled command waits on Node.Quit and reads FatalError.",
+      "evidence": ["cometbft/node/node.go:1044", "cometbft/cmd/cometbft/commands/run_node.go:148"],
+      "materiality": "non-material source-local adjustment; ownership, cleanup-before-return, enabled-only behavior, and typed non-zero propagation are preserved"
+    },
+    {
+      "planned": "Extend the existing per-node testnet rewrite loop.",
+      "actual": "The loop calls a small source-local configureControllerMediationForTestnet helper.",
+      "evidence": ["cometbft/cmd/cometbft/commands/testnet.go:219", "cometbft/cmd/cometbft/commands/testnet.go:232"],
+      "materiality": "non-material"
+    }
+  ],
+  "resolved_blockers": [
+    {
+      "prior_blocker": "F5 required package command timed out in TestStateFullRound1",
+      "resolution": "The runner-owned clean-worktree baseline reproduces the same test, exit code, 10-minute timeout, lock waiter, State.addVote publisher, and pubsub blocking relationship. Existing report/manifest SHA-256 values and the unchanged 17-file resume-input diff satisfy the prior-observation reuse rule.",
+      "classification": "KNOWN_BASELINE_FAILURE",
+      "baseline_id": "BASE-CONSENSUS-001"
+    }
+  ],
+  "remaining_blocker": null,
+  "test_controller_fixture": {
+    "path": "cometbft/node/controller_mediation_test.go",
+    "production_reachable": false,
+    "scenarios": ["registration", "controller-accepted drop", "callback ordering and duplicate ID preservation", "malformed callback followed by valid callback", "non-2xx submission fatal", "bounded lifecycle and concurrent IDs"]
+  },
+  "commands": [
+    {"cwd": ".", "command": "cat prompts/03-generate-functional.md", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat AGENTS.md", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/baseline-report.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/00-spec-review.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/01-binding.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/01-analysis-notes.md", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/02-patch-plan.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/02-patch-plan.md", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/03-functional-report.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "cat artifacts/instrumentation-manifest.json", "exit_code": 0, "result": "PASS"},
+    {"cwd": "cometbft", "command": "test \"$(go test ./config -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS: non-empty discovery"},
+    {"cwd": "cometbft", "command": "go test ./config -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS; repeated after final nil-disabled adjustment and remained PASS"},
+    {"cwd": "cometbft", "command": "(cd p2p && go run ../scripts/metricsgen -struct=Metrics)", "exit_code": 0, "result": "PASS: metrics.gen.go refreshed"},
+    {"cwd": "cometbft", "command": "test \"$(go test ./p2p -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS: non-empty discovery"},
+    {"cwd": "cometbft", "command": "go test ./p2p -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS after fixture used its advertised channel"},
+    {"cwd": "cometbft", "command": "test \"$(go test ./node -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS: non-empty discovery"},
+    {"cwd": "cometbft", "command": "go test ./node -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS; repeated after final nil-disabled adjustment and remained PASS"},
+    {"cwd": "cometbft", "command": "test \"$(go test ./cmd/cometbft/commands -list '^TestControllerMediation' | sed -n '/^TestControllerMediation/p' | wc -l)\" -gt 0", "exit_code": 0, "result": "PASS: non-empty discovery"},
+    {"cwd": "cometbft", "command": "go test ./cmd/cometbft/commands -run '^TestControllerMediation' -count=1", "exit_code": 0, "result": "PASS"},
+    {"cwd": "cometbft", "command": "gofmt -w config/config.go config/controller_mediation_test.go p2p/controller_mediation.go p2p/controller_mediation_test.go p2p/peer.go p2p/switch.go p2p/transport.go p2p/metrics.go node/controller_mediation.go node/controller_mediation_test.go node/node.go statesync/validation_export.go cmd/cometbft/commands/controller_mediation_test.go cmd/cometbft/commands/run_node.go cmd/cometbft/commands/testnet.go", "exit_code": 0, "result": "PASS; repeated after final adjustment"},
+    {"cwd": "cometbft", "command": "go test ./config ./p2p ./internal/consensus ./statesync ./node ./cmd/cometbft/commands -count=1", "exit_code": 1, "result": "KNOWN_BASELINE_FAILURE", "baseline_id": "BASE-CONSENSUS-001", "additional_failures": false},
+    {"cwd": "cometbft", "command": "go test ./internal/consensus -run '^TestStateFullRound1$' -count=1", "exit_code": 1, "result": "KNOWN_BASELINE_FAILURE", "baseline_id": "BASE-CONSENSUS-001", "reused_prior_observation": true},
+    {"cwd": ".", "command": "python3 -m json.tool artifacts/03-functional-report.json >/dev/null", "exit_code": 0, "result": "PASS"},
+    {"cwd": ".", "command": "python3 -m json.tool artifacts/instrumentation-manifest.json >/dev/null", "exit_code": 0, "result": "PASS"}
+  ],
+  "assumptions": [
+    "Enabled experiment nodes use the ordinary MultiplexTransport and concrete peers created by NewNodeWithCliParams.",
+    "Controller and callback values are host:port addresses over plain HTTP in an isolated controlled network.",
+    "The six selected routes and fourteen native types are the revision-local inventory recorded by Prompt 01.",
+    "A callback 2xx is reinjection acceptance only and does not acknowledge protocol execution or state mutation.",
+    "The validated runner-owned baseline establishes only the exact BASE-CONSENSUS-001 signature and does not excuse any additional or changed failure."
+  ],
+  "unresolved_risks": [
+    "The occurrence rate of BASE-CONSENSUS-001 under other Go versions, schedulers, or machine loads is unknown; this does not affect its exact-match disposition for the recorded environment.",
+    "R1 still owns race/rare-interleaving proof for TrySend contention, shutdown accounting, peer replacement, and blocking native dispatch.",
+    "R2 still owns race, vet, lint, and final full regression evidence after the functional blocker is resolved."
+  ],
+  "scope_expansion_requests": []
+}
